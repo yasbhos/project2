@@ -7,19 +7,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Question {
+
     enum QuestionLevel {
         EASY, MEDIUM, HARD, VERY_HARD, UNDEFINED
     }
+
     enum QuestionType {
         CHOICE_ONE, SHORT_ANSWER, LONG_ANSWER, FILL_IN_THE_BLANK, UNDEFINED
     }
-    
+
     private String name;
+
     private double score;
+
     private String description;
+
     private QuestionLevel level;
+
     private QuestionType type;
+
     private String answer;
+
     private Map<User, ArrayList<Answer>> sentAnswers;
 
     public Question() {
@@ -141,7 +149,7 @@ public class Question {
         double score = ScannerWrapper.readDouble("Enter question score: ");
         String description = ScannerWrapper.readString("Enter question description: ");
         QuestionLevel level;
-        while(true) {
+        while (true) {
             printQuestionLevel();
             level = scanQuestionLevel();
             ScannerWrapper.nextLine();
@@ -151,7 +159,7 @@ public class Question {
             System.out.println("Invalid input!");
         }
         QuestionType type;
-        while(true) {
+        while (true) {
             printQuestionType();
             type = scanQuestionType();
             if (type != QuestionType.UNDEFINED) {

@@ -3,19 +3,26 @@ package ir.ac.kntu.logic;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class User {
+
     enum Option {
         CHANGE_NAME, CHANGE_USERNAME, CHANGE_PASSWORD, CHANGE_EMAIL,
         CHANGE_PHONE_NUMBER, CHANGE_NATIONAL_CODE, BACK, UNDEFINED
     }
 
     public static final String ANSI_RESET = "\u001B[0m";
+
     public static final String ANSI_YELLOW = "\u001B[33m";
 
     private String name;
+
     private String username;
+
     private String password;
+
     private String email;
+
     private String phoneNumber;
+
     private String nationalCode;
 
     public User(String name, String username, String password, String email, String phoneNumber, String nationalCode) {
@@ -61,7 +68,7 @@ public class User {
     }
 
     public void handleTheOption(Option option) {
-        switch(option) {
+        switch (option) {
             case CHANGE_NAME:
                 this.name = ScannerWrapper.readString("Enter new name: ");
                 break;

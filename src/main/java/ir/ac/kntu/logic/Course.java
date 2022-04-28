@@ -3,28 +3,42 @@ package ir.ac.kntu.logic;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Course {
+
     enum Option {
         CHANGE_NAME, CHANGE_INSTITUTE, CHANGE_LECTURER, CHANGE_START_DATE, CHANGE_DESCRIPTION,
         CHANGE_OPEN_COURSE, CHANGE_PRIVATE_COURSE, CHANGE_PASSWORD, BACK, UNDEFINED
     }
 
     public static final String ANSI_RESET = "\u001B[0m";
+
     public static final String ANSI_YELLOW = "\u001B[33m";
 
     private User owner;
+
     private String name;
+
     private String institute;
+
     private String lecturer;
+
     private DateTime startDate;
+
     private String description;
+
     private boolean openCourse;
+
     private boolean privateCourse;
+
     private String password;
+
     private ArrayList<User> register;
+
     private Map<User, Double> marks;
+
     private ArrayList<Assignment> assignments;
 
     public Course(User owner, String name, String institute, String lecturer, DateTime startDate, String description,
@@ -126,7 +140,7 @@ public class Course {
     }
 
     public void handleTheOption(Option option) {
-        switch(option) {
+        switch (option) {
             case CHANGE_NAME:
                 this.name = ScannerWrapper.readString("Enter new name: ");
                 break;
@@ -193,7 +207,7 @@ public class Course {
         System.out.print("\r\nPlease enter your choice: ");
         System.out.println(ANSI_RESET);
     }
-   
+
     public static Course read(User owner) {
         String name = ScannerWrapper.readString("Enter name: ");
         String institute = ScannerWrapper.readString("Enter institute: ");

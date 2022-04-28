@@ -6,21 +6,30 @@ import java.util.ArrayList;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Assignment {
+
     enum Option {
         CHANGE_NAME, CHANGE_DESCRIPTION, CHANGE_START_DATE, CHANGE_END_DATE,
         CHANGE_DELAY_COEFFICIENT, CHANGE_DELAY_DATETIME, BACK, UNDEFINED
     }
 
     public static final String ANSI_RESET = "\u001B[0m";
+
     public static final String ANSI_YELLOW = "\u001B[33m";
 
     private String name;
+
     private String description;
+
     private DateTime startDate;
+
     private DateTime endDate;
+
     private int delayCoefficient;
+
     private DateTime delayDateTime;
+
     private ArrayList<Question> questions;
+
     private Map<User, Double> marks;
 
     public Assignment(String name, String description, DateTime startDate, DateTime endDate, int delayCoefficient,

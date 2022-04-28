@@ -1,13 +1,18 @@
 package ir.ac.kntu;
 
 import java.util.ArrayList;
+
 import ir.ac.kntu.logic.*;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Courses {
+
     User currentUser;
+
     ArrayList<User> users;
+
     ArrayList<Course> courses;
+
     ArrayList<Question> questionsBank;
 
     public Courses() {
@@ -458,7 +463,7 @@ public class Courses {
             return;
         }
 
-        for (Assignment assignment: course.getAssignments()) {
+        for (Assignment assignment : course.getAssignments()) {
             System.out.println(assignment);
         }
     }

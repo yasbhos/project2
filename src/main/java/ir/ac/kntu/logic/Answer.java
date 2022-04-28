@@ -4,12 +4,14 @@ import java.time.LocalDateTime;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Answer {
+
     private DateTime sentDateTime;
+
     private String description;
+
     private boolean finalSent;
 
     public Answer() {
-
     }
 
     public Answer(DateTime sentDateTime, String description, boolean finalSent) {
