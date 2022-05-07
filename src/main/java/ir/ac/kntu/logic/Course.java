@@ -4,26 +4,17 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 
+import ir.ac.kntu.util.Cipher;
+
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Course {
-
-    enum Option {
-        CHANGE_NAME, CHANGE_INSTITUTE, CHANGE_LECTURER, CHANGE_START_DATE, CHANGE_DESCRIPTION,
-        CHANGE_OPEN_COURSE, CHANGE_PRIVATE_COURSE, CHANGE_PASSWORD, BACK, UNDEFINED
-    }
-
-    public static final String ANSI_RESET = "\u001B[0m";
-
-    public static final String ANSI_YELLOW = "\u001B[33m";
-
-    private User owner;
 
     private String name;
 
     private String institute;
 
-    private String lecturer;
+    private User lecturer;
 
     private DateTime startDate;
 
@@ -33,7 +24,7 @@ public class Course {
 
     private boolean privateCourse;
 
-    private String password;
+    private String hashedPassword;
 
     private ArrayList<User> register;
 
@@ -41,24 +32,19 @@ public class Course {
 
     private ArrayList<Assignment> assignments;
 
-    public Course(User owner, String name, String institute, String lecturer, DateTime startDate, String description,
+    public Course(String name, String institute, User lecturer, DateTime startDate, String description,
                   boolean openCourse, boolean privateCourse, String password) {
-        this.owner = owner.deepCopy();
         this.name = name;
         this.institute = institute;
-        this.lecturer = lecturer;
+        this.lecturer = lecturer.deepCopy();
         this.startDate = startDate.deepCopy();
         this.description = description;
         this.openCourse = openCourse;
         this.privateCourse = privateCourse;
-        this.password = password;
+        this.hashedPassword = Cipher.getInstance().sha256(password);
         register = new ArrayList<>();
         marks = new HashMap<>();
         assignments = new ArrayList<>();
-    }
-
-    public User getOwner() {
-        return owner.deepCopy();
     }
 
     public String getName() {
@@ -69,12 +55,16 @@ public class Course {
         return institute;
     }
 
-    public String getLecturer() {
-        return lecturer;
+    public User getLecturer() {
+        return lecturer.deepCopy();
     }
 
     public DateTime getStartDate() {
         return startDate.deepCopy();
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public boolean isOpenCourse() {
@@ -85,12 +75,8 @@ public class Course {
         return privateCourse;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public String getDescription() {
-        return description;
+    public String getHashedPassword() {
+        return hashedPassword;
     }
 
     public ArrayList<User> getRegister() {
@@ -103,7 +89,16 @@ public class Course {
     }
 
     public Map<User, Double> getMarks() {
-        return new HashMap<>(marks);
+        Map<User, Double> deepCopy = new HashMap<>();
+        for (Map.Entry<User, Double> entry : marks.entrySet()) {
+            deepCopy.put(entry.getKey().deepCopy(), entry.getValue());
+        }
+
+        return deepCopy;
+    }
+
+    public void scoring(User user, double mark) {
+        marks.put(user, mark);
     }
 
     public ArrayList<Assignment> getAssignments() {
@@ -111,14 +106,27 @@ public class Course {
         for (Assignment assignments : assignments) {
             deepCopy.add(assignments.deepCopy());
         }
+
         return deepCopy;
     }
 
     public boolean register(User student) {
         if (!register.contains(student)) {
             register.add(student);
+            marks.put(student, 0.0);
             return true;
         }
+
+        return false;
+    }
+
+    public boolean unregister(User student) {
+        if (register.contains(student)) {
+            register.remove(student);
+            marks.remove(student);
+            return true;
+        }
+
         return false;
     }
 
@@ -127,19 +135,28 @@ public class Course {
             assignments.add(assignment);
             return true;
         }
+
+        return false;
+    }
+
+    public boolean removeAssignment(Assignment assignment) {
+        if (assignments.contains(assignment)) {
+            assignments.remove(assignment);
+            return true;
+        }
+
         return false;
     }
 
     public void changeHandler() {
-        Option option;
+        Options.CourseChangeMenuOption option;
         do {
-            printTheMenu();
-            option = scanOption();
+            option = Graphics.scanTheOption(Options.CourseChangeMenuOption.values(), Graphics.Color.YELLOW);
             handleTheOption(option);
-        } while (option != Option.BACK);
+        } while (option != Options.CourseChangeMenuOption.BACK);
     }
 
-    public void handleTheOption(Option option) {
+    public void handleTheOption(Options.CourseChangeMenuOption option) {
         switch (option) {
             case CHANGE_NAME:
                 this.name = ScannerWrapper.readString("Enter new name: ");
@@ -148,7 +165,8 @@ public class Course {
                 this.institute = ScannerWrapper.readString("Enter new institute: ");
                 break;
             case CHANGE_LECTURER:
-                this.lecturer = ScannerWrapper.readString("Enter new lecturer: ");
+                System.out.println("Enter new lecturer: ");
+                this.lecturer = User.read();
                 break;
             case CHANGE_START_DATE:
                 System.out.println("Enter new start date: ");
@@ -164,8 +182,10 @@ public class Course {
                 this.privateCourse = ScannerWrapper.readBoolean("Is a private-course? (true/false): ");
                 break;
             case CHANGE_PASSWORD:
-                if (ScannerWrapper.readString("Enter old password: ").equals(password)) {
-                    this.password = ScannerWrapper.readString("Enter new password: ");
+                String oldPassword = ScannerWrapper.readPassword("Enter old password: ");
+                if (Cipher.getInstance().sha256(oldPassword).equals(hashedPassword)) {
+                    String newPassword = ScannerWrapper.readPassword("Enter new password: ");
+                    this.hashedPassword = Cipher.getInstance().sha256(newPassword);
                 } else {
                     System.out.println("Wrong password");
                 }
@@ -174,69 +194,37 @@ public class Course {
                 break;
             default:
                 System.out.println("Invalid option!");
-                break;
         }
     }
 
-    public static Option scanOption() {
-        Option[] options = Option.values();
-        int userInput = ScannerWrapper.nextInt();
-        ScannerWrapper.nextLine();
-        userInput--;
-        if (userInput >= 0 && userInput < options.length) {
-            return options[userInput];
-        }
-
-        return Option.UNDEFINED;
-    }
-
-    public void printTheMenu() {
-        System.out.println(ANSI_YELLOW);
-        System.out.println("*************************");
-        System.out.println("Course change menu: ");
-        System.out.println("1. Change name");
-        System.out.println("2. Change institute");
-        System.out.println("3. Change lecturer");
-        System.out.println("4. Change start date");
-        System.out.println("5. Change description");
-        System.out.println("6. Change open-course");
-        System.out.println("7. Change private-course");
-        System.out.println("8. Change password");
-        System.out.println("9. BACK");
-        System.out.println("*************************");
-        System.out.print("\r\nPlease enter your choice: ");
-        System.out.println(ANSI_RESET);
-    }
-
-    public static Course read(User owner) {
+    public static Course read(User lecturer) {
         String name = ScannerWrapper.readString("Enter name: ");
         String institute = ScannerWrapper.readString("Enter institute: ");
-        String lecturer = ScannerWrapper.readString("Enter lecturer: ");
         System.out.println("Enter start date: ");
         DateTime startDate = DateTime.readDate();
         String description = ScannerWrapper.readString("Enter description: ");
         boolean isOpenCourse = ScannerWrapper.readBoolean("Is an open-course? (true/false): ");
-        boolean isPrivateCourse = ScannerWrapper.readBoolean("Is a private-course? (true/false): ");
-        ScannerWrapper.nextLine();
-        String password = null;
-        if (isPrivateCourse) {
-            password = ScannerWrapper.readString("Enter password: ");
+        boolean isPrivateCourse = false;
+        String password = "";
+        if (ScannerWrapper.readBoolean("Is a private-course? (true/false): ")) {
+            isPrivateCourse = true;
+            password = ScannerWrapper.readPassword("Enter password: ");
         }
 
-        return new Course(owner, name, institute, lecturer, startDate, description, isOpenCourse, isPrivateCourse, password);
+        return new Course(name, institute, lecturer, startDate, description, isOpenCourse, isPrivateCourse, password);
     }
 
     @Override
     public String toString() {
         return "Course{" +
-                "owner: " + owner +
-                ", name: '" + name + '\'' +
-                ", institute: '" + institute + '\'' +
-                ", lecturer: '" + lecturer + '\'' +
-                ", startDate: " + startDate +
-                ", openCourse: " + openCourse +
-                ", privateCourse: " + privateCourse +
-                '}';
+                "name='" + name + '\'' +
+                ", institute='" + institute + '\'' +
+                ", lecturer=" + lecturer +
+                ", startDate=" + startDate +
+                ", description='" + description + '\'' +
+                ", openCourse=" + openCourse +
+                ", privateCourse=" + privateCourse +
+                "}";
     }
 
     @Override
@@ -251,28 +239,38 @@ public class Course {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         Course other = (Course) obj;
         if (institute == null) {
-            if (other.institute != null)
+            if (other.institute != null) {
                 return false;
-        } else if (!institute.equals(other.institute))
+            }
+        } else if (!institute.equals(other.institute)) {
             return false;
+        }
         if (lecturer == null) {
-            if (other.lecturer != null)
+            if (other.lecturer != null) {
                 return false;
-        } else if (!lecturer.equals(other.lecturer))
+            }
+        } else if (!lecturer.equals(other.lecturer)) {
             return false;
+        }
         if (name == null) {
-            if (other.name != null)
+            if (other.name != null) {
                 return false;
-        } else if (!name.equals(other.name))
+            }
+        } else if (!name.equals(other.name)) {
             return false;
+        }
         return true;
     }
+
 }

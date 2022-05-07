@@ -1,18 +1,19 @@
 package ir.ac.kntu.logic;
 
+import ir.ac.kntu.logic.Graphics.Color;
 import ir.ac.kntu.util.ScannerWrapper;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 public class Question {
 
-    enum QuestionLevel {
+    public enum QuestionLevel {
         EASY, MEDIUM, HARD, VERY_HARD, UNDEFINED
     }
 
-    enum QuestionType {
+    public enum QuestionType {
         CHOICE_ONE, SHORT_ANSWER, LONG_ANSWER, FILL_IN_THE_BLANK, UNDEFINED
     }
 
@@ -28,11 +29,7 @@ public class Question {
 
     private String answer;
 
-    private Map<User, ArrayList<Answer>> sentAnswers;
-
-    public Question() {
-        sentAnswers = new HashMap<>();
-    }
+    private Map<User, ArrayList<Answer>> answers;
 
     public Question(String name, double score, String description, QuestionLevel level, QuestionType type, String answer) {
         this.name = name;
@@ -41,132 +38,94 @@ public class Question {
         this.level = level;
         this.type = type;
         this.answer = answer;
-        this.sentAnswers = new HashMap<>();
+        this.answers = new HashMap<>();
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public double getScore() {
         return score;
-    }
-
-    public void setScore(double score) {
-        this.score = score;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public QuestionLevel getLevel() {
         return level;
-    }
-
-    public void setLevel(QuestionLevel level) {
-        this.level = level;
     }
 
     public QuestionType getType() {
         return type;
     }
 
-    public void setType(QuestionType type) {
-        this.type = type;
-    }
-
     public String getAnswer() {
         return answer;
     }
 
-    public void setAnswer(String answer) {
-        this.answer = answer;
+    public Map<User, ArrayList<Answer>> getAnswers() {
+        return answers;
     }
 
-    public Map<User, ArrayList<Answer>> getSentAnswers() {
-        return sentAnswers;
-    }
-
-    public void setSentAnswers(Map<User, ArrayList<Answer>> sentAnswers) {
-        this.sentAnswers = sentAnswers;
-    }
-
-    public static QuestionLevel scanQuestionLevel() {
-        QuestionLevel[] options = QuestionLevel.values();
-        int userInput = ScannerWrapper.nextInt();
-        ScannerWrapper.nextLine();
-        userInput--;
-        if (userInput >= 0 && userInput < options.length) {
-            return options[userInput];
+    public void addAnswer(User user, Answer answer) {
+        if (type == QuestionType.CHOICE_ONE || type == QuestionType.SHORT_ANSWER) {
+            if (answer.getDescription().equals(this.answer)) {
+                answer.setScore(score);
+            }
         }
-        return QuestionLevel.UNDEFINED;
-    }
 
-    public static QuestionType scanQuestionType() {
-        QuestionType[] options = QuestionType.values();
-        int userInput = ScannerWrapper.nextInt();
-        ScannerWrapper.nextLine();
-        userInput--;
-        if (userInput >= 0 && userInput < options.length) {
-            return options[userInput];
+        if (answers.containsKey(user)) {
+            ArrayList<Answer> userAnswers = answers.get(user);
+            userAnswers.get(userAnswers.size() - 1).setFinalSent(false);
+            answers.get(user).add(answer);
+        } else {
+            ArrayList<Answer> userAnswers = new ArrayList<>();
+            userAnswers.add(answer);
+            answers.put(user, userAnswers);
         }
-        return QuestionType.UNDEFINED;
     }
 
-    public static void printQuestionLevel() {
-        System.out.println("Question Level:");
-        System.out.println("********************");
-        System.out.println("1. EASY");
-        System.out.println("2. MEDIUM");
-        System.out.println("3. HARD");
-        System.out.println("4. VERY HARD");
-        System.out.println("********************");
-        System.out.print("\r\nPlease enter your choice: ");
+    public void removeAnswer(User user, Answer answer) {
+        if (answers.containsKey(user)) {
+            answers.get(user).remove(answer);
+        }
     }
 
-    public static void printQuestionType() {
-        System.out.println("Question Type:");
-        System.out.println("********************");
-        System.out.println("1. CHOICE_ONE");
-        System.out.println("2. SHORT_ANSWER");
-        System.out.println("3. LONG_ANSWER");
-        System.out.println("4. FILL_IN_THE_BLANK");
-        System.out.println("********************");
-        System.out.print("\r\nPlease enter your choice: ");
+    public Answer getFinalAnswer(User user) {
+        if (answers.containsKey(user)) {
+            ArrayList<Answer> userAnswers = answers.get(user);
+            for (Answer answer : userAnswers) {
+                if (answer.isFinalSent()) {
+                    return answer;
+                }
+            }
+        }
+
+        return null;    
     }
 
     public static Question read() {
         String name = ScannerWrapper.readString("Enter question name: ");
         double score = ScannerWrapper.readDouble("Enter question score: ");
-        String description = ScannerWrapper.readString("Enter question description: ");
+        String description = ScannerWrapper.readString("Enter question description: \n");
         QuestionLevel level;
-        while (true) {
-            printQuestionLevel();
-            level = scanQuestionLevel();
-            ScannerWrapper.nextLine();
-            if (level != QuestionLevel.UNDEFINED) {
-                break;
+        do {
+            level = Graphics.scanTheOption(QuestionLevel.values(), Color.WHITE);
+            if (level == QuestionLevel.UNDEFINED) {
+                System.out.println("Please enter a valid question level.");
             }
-            System.out.println("Invalid input!");
-        }
+        } while (level == QuestionLevel.UNDEFINED);
+
         QuestionType type;
-        while (true) {
-            printQuestionType();
-            type = scanQuestionType();
-            if (type != QuestionType.UNDEFINED) {
-                break;
+        do {
+            type = Graphics.scanTheOption(QuestionType.values(), Color.WHITE);
+            if (type == QuestionType.UNDEFINED) {
+                System.out.println("Please enter a valid question type.");
             }
-            System.out.println("Invalid input!");
-        }
+        } while (type == QuestionType.UNDEFINED);
+
         String answer = ScannerWrapper.readString("Enter question answer: ");
 
         return new Question(name, score, description, level, type, answer);
@@ -179,9 +138,12 @@ public class Question {
     @Override
     public String toString() {
         return "Question{" +
-                ", name: '" + name + '\'' +
-                ", score: '" + score + '\'' +
-                ", name: \"" + description + '\"' +
+                "name='" + name + '\'' +
+                ", score=" + score +
+                ", description='" + description + '\'' +
+                ", level=" + level +
+                ", type=" + type +
                 '}';
     }
+
 }

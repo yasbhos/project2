@@ -1,10 +1,10 @@
 package ir.ac.kntu.logic;
 
-import ir.ac.kntu.util.ScannerWrapper;
-
 import java.time.LocalDateTime;
 
-public class DateTime {
+import ir.ac.kntu.util.ScannerWrapper;
+
+public class DateTime implements Comparable<DateTime> {
 
     private int year;
 
@@ -155,7 +155,7 @@ public class DateTime {
         int hour = ScannerWrapper.readInt("Hour: ");
         int minute = ScannerWrapper.readInt("Minute: ");
         int second = ScannerWrapper.readInt("Second: ");
-        ScannerWrapper.nextLine();
+
         return new DateTime(year, month, day, hour, minute, second);
     }
 
@@ -163,7 +163,7 @@ public class DateTime {
         int year = ScannerWrapper.readInt("Year: ");
         int month = ScannerWrapper.readInt("Month: ");
         int day = ScannerWrapper.readInt("Day: ");
-        ScannerWrapper.nextLine();
+
         return new DateTime(year, month, day, 0, 0, 0);
     }
 
@@ -171,6 +171,7 @@ public class DateTime {
         return new DateTime(year, month, day, hour, minute, second);
     }
 
+    @Override
     public int compareTo(DateTime other) {
         if (this.year > other.year) {
             return 1;
@@ -232,25 +233,35 @@ public class DateTime {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         DateTime other = (DateTime) obj;
-        if (day != other.day)
+        if (day != other.day) {
             return false;
-        if (hour != other.hour)
+        }
+        if (hour != other.hour) {
             return false;
-        if (minute != other.minute)
+        }
+        if (minute != other.minute) {
             return false;
-        if (month != other.month)
+        }
+        if (month != other.month) {
             return false;
-        if (second != other.second)
+        }
+        if (second != other.second) {
             return false;
-        if (year != other.year)
+        }
+        if (year != other.year) {
             return false;
+        }
+
         return true;
     }
 

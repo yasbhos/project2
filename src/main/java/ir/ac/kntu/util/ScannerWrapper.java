@@ -1,20 +1,21 @@
 package ir.ac.kntu.util;
 
 import java.util.Scanner;
+import java.io.Console;
 
 public final class ScannerWrapper {
 
     private static final Scanner SCANNER_GENERATOR = new Scanner(System.in);
 
+    private static final Console CONSOLE = System.console();
+
     private ScannerWrapper() {
     }
 
     public static int nextInt() {
-        return SCANNER_GENERATOR.nextInt();
-    }
-
-    public static String nextLine() {
-        return SCANNER_GENERATOR.nextLine();
+        int nextInt = SCANNER_GENERATOR.nextInt();
+        SCANNER_GENERATOR.nextLine();
+        return nextInt;
     }
 
     public static String readString(String message) {
@@ -29,12 +30,25 @@ public final class ScannerWrapper {
 
     public static int readInt(String message) {
         System.out.print(message);
-        return SCANNER_GENERATOR.nextInt();
+        int nextInt = SCANNER_GENERATOR.nextInt();
+        SCANNER_GENERATOR.nextLine();
+        return nextInt;
     }
 
     public static double readDouble(String message) {
         System.out.print(message);
-        return SCANNER_GENERATOR.nextDouble();
+        double nextDouble = SCANNER_GENERATOR.nextDouble();
+        SCANNER_GENERATOR.nextLine();
+        return nextDouble;
+    }
+
+    public static String readPassword(String message) {
+        if (CONSOLE == null) {
+            System.out.println("No console available");
+            return null;
+        }
+        System.out.print(message);
+        return String.valueOf(CONSOLE.readPassword());
     }
 
 }

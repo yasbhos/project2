@@ -1,31 +1,29 @@
 package ir.ac.kntu.logic;
 
-import java.time.LocalDateTime;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Answer {
 
-    private DateTime sentDateTime;
+    private double score;
 
     private String description;
 
+    private DateTime sentDateTime;
+
     private boolean finalSent;
 
-    public Answer() {
-    }
-
-    public Answer(DateTime sentDateTime, String description, boolean finalSent) {
+    public Answer(String description, DateTime sentDateTime, boolean finalSent) {
         this.sentDateTime = sentDateTime;
         this.description = description;
         this.finalSent = finalSent;
     }
 
     public DateTime getSentDateTime() {
-        return sentDateTime;
+        return sentDateTime.deepCopy();
     }
 
     public void setSentDateTime(DateTime sentDateTime) {
-        this.sentDateTime = sentDateTime;
+        this.sentDateTime = sentDateTime.deepCopy();
     }
 
     public String getDescription() {
@@ -44,13 +42,27 @@ public class Answer {
         this.finalSent = finalSent;
     }
 
-    public static Answer read() {
-        LocalDateTime dateTime = LocalDateTime.now();
-        DateTime dt = new DateTime(dateTime.getYear(), dateTime.getMonthValue(), dateTime.getDayOfMonth(),
-                dateTime.getHour(), dateTime.getMinute(), dateTime.getSecond());
-        String answer = ScannerWrapper.readString("Enter answer: ");
-        boolean fs = ScannerWrapper.readBoolean("Is final set? (true/false)");
-
-        return new Answer(dt, answer, fs);
+    public double getScore() {
+        return score;
     }
+
+    public void setScore(double score) {
+        this.score = score;
+    }
+
+    public static Answer read() {
+        String description = ScannerWrapper.readString("Enter answer: ");
+
+        return new Answer(description, DateTime.now(), true);
+    }
+
+    @Override
+    public String toString() {
+        return "Answer{" +
+                "description='" + description + '\'' +
+                ", sentDateTime=" + sentDateTime +
+                ", finalSent=" + finalSent +
+                '}';
+    }
+
 }

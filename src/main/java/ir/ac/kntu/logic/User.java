@@ -1,23 +1,15 @@
 package ir.ac.kntu.logic;
 
+import ir.ac.kntu.util.Cipher;
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class User {
-
-    enum Option {
-        CHANGE_NAME, CHANGE_USERNAME, CHANGE_PASSWORD, CHANGE_EMAIL,
-        CHANGE_PHONE_NUMBER, CHANGE_NATIONAL_CODE, BACK, UNDEFINED
-    }
-
-    public static final String ANSI_RESET = "\u001B[0m";
-
-    public static final String ANSI_YELLOW = "\u001B[33m";
 
     private String name;
 
     private String username;
 
-    private String password;
+    private String hashedPassword;
 
     private String email;
 
@@ -28,7 +20,7 @@ public class User {
     public User(String name, String username, String password, String email, String phoneNumber, String nationalCode) {
         this.name = name;
         this.username = username;
-        this.password = password;
+        this.hashedPassword = Cipher.getInstance().sha256(password);
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.nationalCode = nationalCode;
@@ -42,8 +34,8 @@ public class User {
         return username;
     }
 
-    public String getPassword() {
-        return password;
+    public String getHashedPassword() {
+        return hashedPassword;
     }
 
     public String getEmail() {
@@ -59,15 +51,14 @@ public class User {
     }
 
     public void changeHandler() {
-        Option option;
+        Options.UserChangeMenuOption option;
         do {
-            printTheMenu();
-            option = scanOption();
+            option = Graphics.scanTheOption(Options.UserChangeMenuOption.values(), Graphics.Color.YELLOW);
             handleTheOption(option);
-        } while (option != Option.BACK);
+        } while (option != Options.UserChangeMenuOption.BACK);
     }
 
-    public void handleTheOption(Option option) {
+    public void handleTheOption(Options.UserChangeMenuOption option) {
         switch (option) {
             case CHANGE_NAME:
                 this.name = ScannerWrapper.readString("Enter new name: ");
@@ -76,14 +67,16 @@ public class User {
                 this.username = ScannerWrapper.readString("Enter new username: ");
                 break;
             case CHANGE_PASSWORD:
-                if (ScannerWrapper.readString("Enter old password: ").equals(password)) {
-                    this.password = ScannerWrapper.readString("Enter new password: ");
+                String oldPassToHash = ScannerWrapper.readPassword("Enter old password: ");
+                if (Cipher.getInstance().sha256(oldPassToHash).equals(hashedPassword)) {
+                    String newPassToHash = ScannerWrapper.readPassword("Enter new password: ");
+                    this.hashedPassword = Cipher.getInstance().sha256(newPassToHash);
                 } else {
                     System.out.println("Wrong password");
                 }
                 break;
             case CHANGE_EMAIL:
-                this.email = ScannerWrapper.readString("Enter new e-mail: ");
+                this.email = ScannerWrapper.readString("Enter new email: ");
                 break;
             case CHANGE_PHONE_NUMBER:
                 this.phoneNumber = ScannerWrapper.readString("Enter new phone number: ");
@@ -95,85 +88,68 @@ public class User {
                 break;
             default:
                 System.out.println("Invalid option!");
-                break;
         }
-    }
-
-    public static Option scanOption() {
-        Option[] options = Option.values();
-        int userInput = ScannerWrapper.nextInt();
-        ScannerWrapper.nextLine();
-        userInput--;
-        if (userInput >= 0 && userInput < options.length) {
-            return options[userInput];
-        }
-        return Option.UNDEFINED;
-    }
-
-    public void printTheMenu() {
-        System.out.println(ANSI_YELLOW);
-        System.out.println("*************************");
-        System.out.println("User change menu: ");
-        System.out.println("1. Change name");
-        System.out.println("2. Change username");
-        System.out.println("3. Change password");
-        System.out.println("4. Change e-mail");
-        System.out.println("5. Change phone number");
-        System.out.println("6. Change national code");
-        System.out.println("7. Back");
-        System.out.println("*************************");
-        System.out.print("\r\nPlease enter your choice: ");
-        System.out.println(ANSI_RESET);
     }
 
     public static User read() {
         String name = ScannerWrapper.readString("Enter name: ");
         String username = ScannerWrapper.readString("Enter username: ");
-        String password = ScannerWrapper.readString("Enter password: ");
+        String passToHash = ScannerWrapper.readPassword("Enter password: ");
         String email = ScannerWrapper.readString("Enter email: ");
         String phoneNumber = ScannerWrapper.readString("Enter phone number: ");
         String nationalCode = ScannerWrapper.readString("Enter national code: ");
 
-        return new User(name, username, password, email, phoneNumber, nationalCode);
+        return new User(name, username, passToHash, email, phoneNumber, nationalCode);
     }
 
     public User deepCopy() {
-        return new User(name, username, password, email, phoneNumber, nationalCode);
+        return new User(name, username, hashedPassword, email, phoneNumber, nationalCode);
     }
 
     @Override
     public String toString() {
-        return "Username : " + username;
+        return "User{" +
+                "name='" + name + '\'' +
+                ", username='" + username + '\'' +
+                "}";
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((username == null) ? 0 : username.hashCode());
         result = prime * result + ((nationalCode == null) ? 0 : nationalCode.hashCode());
         return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         User other = (User) obj;
-        if (name == null) {
-            if (other.name != null)
+        if (username == null) {
+            if (other.username != null) {
                 return false;
-        } else if (!name.equals(other.name))
+            }
+        } else if (!username.equals(other.username)) {
             return false;
+        }
         if (nationalCode == null) {
-            if (other.nationalCode != null)
+            if (other.nationalCode != null) {
                 return false;
-        } else if (!nationalCode.equals(other.nationalCode))
+            }
+        } else if (!nationalCode.equals(other.nationalCode)) {
             return false;
+        }
+
         return true;
     }
 }
