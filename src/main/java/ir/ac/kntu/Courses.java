@@ -23,11 +23,17 @@ public class Courses {
         questionsBank = new ArrayList<>();
     }
 
+    public Courses(ArrayList<User> users, ArrayList<Course> courses, ArrayList<Question> questionsBank) {
+        this.users = users;
+        this.courses = courses;
+        this.questionsBank = questionsBank;
+    }
+
     //Courses program, login menu options handler
     public boolean signUp() {
-        User user = User.read();
+        User user = User.readUser("Enter your attributes");
         if (user == null) {
-            System.out.println("Sign up failed");
+            System.out.println("Sign up process failed");
             return false;
         }
         currentUser = user;
@@ -44,10 +50,12 @@ public class Courses {
         String username = ScannerWrapper.readString("Username: ");
         String passToHash = ScannerWrapper.readPassword("Password: ");
         for (User user : users) {
-            if (user.getUsername().equals(username) &&
-                    user.getHashedPassword().equals(Cipher.getInstance().sha256(passToHash))) {
-                currentUser = user;
-                return true;
+            if (user.getUsername().equals(username)) {
+                assert passToHash != null;
+                if (user.getHashedPassword().equals(Cipher.sha256(passToHash))) {
+                    currentUser = user;
+                    return true;
+                }
             }
         }
         System.out.println("Invalid username or password");
@@ -65,10 +73,10 @@ public class Courses {
             System.out.println("There is no user");
             return null;
         }
-        int choice = ScannerWrapper.readInt("Search user by National code(press 1) or Email(press 2)?");
+        int choice = ScannerWrapper.readInt("Search user by National code(press 1) or Email(press 2)? ");
 
         switch (choice) {
-            case 1:
+            case 1 -> {
                 String nationalCode = ScannerWrapper.readString("National code: ");
                 for (User user : users) {
                     if (user.getNationalCode().equals(nationalCode)) {
@@ -76,8 +84,8 @@ public class Courses {
                     }
                 }
                 System.out.println("User not found");
-                break;
-            case 2:
+            }
+            case 2 -> {
                 String email = ScannerWrapper.readString("Email: ");
                 for (User user : users) {
                     if (user.getEmail().equals(email)) {
@@ -85,9 +93,8 @@ public class Courses {
                     }
                 }
                 System.out.println("User not found");
-                break;
-            default:
-                System.out.println("Invalid choice");
+            }
+            default -> System.out.println("Invalid choice");
         }
 
         return null;
@@ -153,23 +160,26 @@ public class Courses {
         }
         System.out.println("Question not found");
 
-
         return null;
     }
 
     public Answer searchAnswer(Question question, User user) {
-        if (question.getAnswers().size() == 0) {
+        if (question.getSentAnswers().size() == 0) {
             System.out.println("There is no answer");
             return null;
         }
 
-        int answerIndex = ScannerWrapper.readInt("Answer index: ");
-        if (answerIndex < 1 || answerIndex > question.getAnswers().size()) {
-            System.out.println("Invalid answer index");
+        ArrayList<Answer> answers = question.getSentAnswers().get(currentUser);
+        for (int index = 0; index < answers.size(); index++) {
+            System.out.println((index + 1) + ") " + answers.get(index));
+        }
+        int choice = ScannerWrapper.readInt("Choose an answer: ");
+        if (choice > answers.size() || choice < 1) {
+            System.out.println("Invalid choice");
             return null;
         }
 
-        return question.getAnswers().get(user).get(answerIndex - 1);
+        return answers.get(choice - 1);
     }
 
     public void searchAnswersByEmail() {
@@ -191,7 +201,7 @@ public class Courses {
             return;
         }
 
-        if (question.getAnswers().size() == 0) {
+        if (question.getSentAnswers().size() == 0) {
             System.out.println("There is no answer");
             return;
         }
@@ -199,7 +209,7 @@ public class Courses {
         String email = ScannerWrapper.readString("Email: ");
         for (User user : users) {
             if (user.getEmail().equals(email)) {
-                for (Answer answer : question.getAnswers().get(user)) {
+                for (Answer answer : question.getSentAnswers().get(user)) {
                     System.out.println(answer);
                 }
             }
@@ -208,39 +218,31 @@ public class Courses {
 
     //Courses program, add-menu options handler
     public void addUser() {
-        User user = User.read();
-        if (user == null) {
-            System.out.println("add user process failed");
-            return;
-        }
+        User user = User.readUser("Enter user attributes");
         users.add(user);
     }
 
     public void addCourse() {
-        Course course = Course.read(currentUser);
-        if (course == null) {
-            System.out.println("add course process failed");
-            return;
-        }
+        Course course = Course.readCourse(currentUser, "Enter course attributes");
         courses.add(course);
     }
 
     public void addQuestionToAssignmentFromQuestionBank() {
         Question question = searchQuestionInQuestionBank();
         if (question == null) {
-            System.out.println("add question to assignment process failed");
+            System.out.println("Add question to assignment process failed");
             return;
         }
 
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("add question to assignment process failed");
+            System.out.println("Add question to assignment process failed");
             return;
         }
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("add question to assignment process failed");
+            System.out.println("Add question to assignment process failed");
             return;
         }
 
@@ -248,11 +250,7 @@ public class Courses {
     }
 
     public void addQuestionToQuestionBank() {
-        Question question = Question.read();
-        if (question == null) {
-            System.out.println("add question process failed");
-            return;
-        }
+        Question question = Question.readQuestion("Enter question attributes");
         questionsBank.add(question);
     }
 
@@ -262,12 +260,7 @@ public class Courses {
             System.out.println("add assignment process failed");
             return;
         }
-        System.out.println("Assignment details:");
-        Assignment assignment = Assignment.read();
-        if (assignment == null) {
-            System.out.println("add assignment process failed");
-            return;
-        }
+        Assignment assignment = Assignment.readAssignment("Enter assignment attributes");
         course.addAssignment(assignment);
     }
 
@@ -289,7 +282,7 @@ public class Courses {
             return;
         }
 
-        if (!(assignment.getDelayDateTime().compareTo(DateTime.now()) == 1)) {
+        if (assignment.getDelayDateTime().compareTo(DateTime.now()) > 0) {
             System.out.println("Practice deadline is over");
             return;
         }
@@ -300,11 +293,7 @@ public class Courses {
             return;
         }
 
-        Answer answer = Answer.read();
-        if (answer == null) {
-            System.out.println("add answer process failed");
-            return;
-        }
+        Answer answer = Answer.readAnswer("Enter answer attributes");
         question.addAnswer(currentUser, answer);
     }
 
@@ -318,8 +307,8 @@ public class Courses {
 
         String passToHash = ScannerWrapper.readPassword("Enter password: ");
 
-        if (user.getHashedPassword().equals(Cipher.getInstance().sha256(passToHash)) ||
-                user.equals(currentUser)) {
+        assert passToHash != null;
+        if (user.getHashedPassword().equals(Cipher.sha256(passToHash))) {
             user.changeHandler();
         } else {
             System.out.println("Wrong password");
@@ -361,10 +350,14 @@ public class Courses {
         assignment.changeHandler();
     }
 
+    public void changeQuestion() {
+        //TODO: Complete
+    }
+
     public void changeAnswer() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("change answer process failed");
+            System.out.println("Change answer process failed");
             return;
         }
 
@@ -375,24 +368,24 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("change answer process failed");
+            System.out.println("Change answer process failed");
             return;
         }
 
-        if (!(assignment.getDelayDateTime().compareTo(DateTime.now()) == 1)) {
+        if (assignment.getDelayDateTime().compareTo(DateTime.now()) > 0) {
             System.out.println("Practice deadline is over");
             return;
         }
 
         Question question = searchQuestion(assignment);
         if (question == null) {
-            System.out.println("change answer process failed");
+            System.out.println("Change answer process failed");
             return;
         }
 
         Answer answer = searchAnswer(question, currentUser);
         if (answer == null) {
-            System.out.println("change answer process failed");
+            System.out.println("Change answer process failed");
             return;
         }
         answer.setDescription(ScannerWrapper.readString("Enter new description: "));
@@ -402,12 +395,13 @@ public class Courses {
     public void removeUser() {
         User user = searchUser();
         if (user == null) {
-            System.out.println("remove user process failed");
+            System.out.println("Remove user process failed");
             return;
         }
 
         String passToHash = ScannerWrapper.readPassword("Enter password: ");
-        if (user.getHashedPassword().equals(Cipher.getInstance().sha256(passToHash))) {
+        assert passToHash != null;
+        if (user.getHashedPassword().equals(Cipher.sha256(passToHash))) {
             users.remove(user);
         } else {
             System.out.println("Wrong password");
@@ -417,7 +411,7 @@ public class Courses {
     public void removeCourse() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("remove course process failed");
+            System.out.println("Remove course process failed");
             return;
         }
 
@@ -432,7 +426,7 @@ public class Courses {
     public void removeAssignment() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("remove assignment process failed");
+            System.out.println("Remove assignment process failed");
             return;
         }
 
@@ -443,17 +437,21 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("remove assignment process failed");
+            System.out.println("Remove assignment process failed");
             return;
         }
 
         course.removeAssignment(assignment);
     }
 
+    public void removeQuestion() {
+        //TODO: Complete
+    }
+
     public void removeAnswer() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("remove answer process failed");
+            System.out.println("Remove answer process failed");
             return;
         }
 
@@ -464,18 +462,18 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("remove answer process failed");
+            System.out.println("Remove answer process failed");
             return;
         }
 
-        if (!(assignment.getDelayDateTime().compareTo(DateTime.now()) == 1)) {
+        if (assignment.getDelayDateTime().compareTo(DateTime.now()) > 0) {
             System.out.println("Practice deadline is over");
             return;
         }
 
         Question question = searchQuestion(assignment);
         if (question == null) {
-            System.out.println("remove answer process failed");
+            System.out.println("Remove answer process failed");
             return;
         }
 
@@ -516,7 +514,7 @@ public class Courses {
     public void listOfAnswers() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("list of answers process failed");
+            System.out.println("List of answers process failed");
             return;
         }
 
@@ -527,21 +525,37 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("list of answers process failed");
+            System.out.println("List of answers process failed");
             return;
         }
 
         Question question = searchQuestion(assignment);
         if (question == null) {
-            System.out.println("list of answers process failed");
+            System.out.println("List of answers process failed");
             return;
         }
 
-        for (Answer answer : question.getAnswers().get(currentUser)) {
+        for (Answer answer : question.getSentAnswers().get(currentUser)) {
             System.out.println(answer);
         }
+    }
 
+    public void listQuestionBank() {
+        for (Question question : questionsBank) {
+            System.out.println(question);
+        }
+    }
 
+    public void listOfSentAnswers() {
+        //TODO: Complete
+    }
+
+    public void listOfFinalSentAnswers() {
+        //TODO: Complete
+    }
+
+    public void listOfFinalSentAndPointing() {
+        //TODO: Complete
     }
 
     //Courses program, other-menu options handler
@@ -557,15 +571,16 @@ public class Courses {
             return;
         }
 
-        if (!course.isOpenCourse()) {
-            System.out.println("This course is not open");
+        if (course.getStatus().equals(Course.CourseStatus.INACTIVE)) {
+            System.out.println("This course is inactive");
             return;
         }
 
-        if (course.isPrivateCourse()) {
+        if (course.getStatus().equals(Course.CourseStatus.ACTIVE_PRIVATE)) {
             do {
                 String passToHash = ScannerWrapper.readPassword("Enter password of the course: ");
-                if (course.getHashedPassword().equals(Cipher.getInstance().sha256(passToHash))) {
+                assert passToHash != null;
+                if (course.getHashedPassword().equals(Cipher.sha256(passToHash))) {
                     course.register(currentUser);
                     System.out.println("Successfully registered to the course");
                     break;
@@ -582,7 +597,7 @@ public class Courses {
     public void registerStudentToCourse() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("register student to course process failed");
+            System.out.println("Register student to course process failed");
             return;
         }
 
@@ -593,7 +608,7 @@ public class Courses {
 
         User student = searchUser();
         if (student == null) {
-            System.out.println("register student to course process failed");
+            System.out.println("Register student to course process failed");
             return;
         }
 
@@ -604,7 +619,7 @@ public class Courses {
     public void scoreBoard() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("score board process failed");
+            System.out.println("ScoreBoard process failed");
             return;
         }
 
@@ -615,7 +630,7 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("score board process failed");
+            System.out.println("ScoreBoard process failed");
             return;
         }
 
@@ -625,7 +640,7 @@ public class Courses {
     public void pointing() {
         Course course = searchCourse();
         if (course == null) {
-            System.out.println("pointing process failed");
+            System.out.println("Pointing process failed");
             return;
         }
 
@@ -636,7 +651,7 @@ public class Courses {
 
         Assignment assignment = searchAssignment(course);
         if (assignment == null) {
-            System.out.println("pointing process failed");
+            System.out.println("Pointing process failed");
             return;
         }
 

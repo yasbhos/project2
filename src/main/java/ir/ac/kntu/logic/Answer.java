@@ -4,17 +4,17 @@ import ir.ac.kntu.util.ScannerWrapper;
 
 public class Answer {
 
-    private double score;
-
     private String description;
 
     private DateTime sentDateTime;
 
+    private double score;
+
     private boolean finalSent;
 
     public Answer(String description, DateTime sentDateTime, boolean finalSent) {
-        this.sentDateTime = sentDateTime;
         this.description = description;
+        this.sentDateTime = sentDateTime.deepCopy();
         this.finalSent = finalSent;
     }
 
@@ -50,7 +50,8 @@ public class Answer {
         this.score = score;
     }
 
-    public static Answer read() {
+    public static Answer readAnswer(String message) {
+        System.out.println(message);
         String description = ScannerWrapper.readString("Enter answer: ");
 
         return new Answer(description, DateTime.now(), true);
@@ -62,6 +63,7 @@ public class Answer {
                 "description='" + description + '\'' +
                 ", sentDateTime=" + sentDateTime +
                 ", finalSent=" + finalSent +
+                ", score=" + score +
                 '}';
     }
 

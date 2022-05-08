@@ -125,8 +125,8 @@ public class DateTime implements Comparable<DateTime> {
     private boolean isLeapYear(int year) {
         double a = 0.025;
         double b = 266;
-        double leapDays0 = 0, leapDays1 = 0;
-        int frac0 = 0, frac1 = 0;
+        double leapDays0, leapDays1;
+        int frac0, frac1;
         if (year > 0) {
             leapDays0 = ((year + 38) % 2820) * 0.24219 + a;  //0.24219 ~ extra days of one year
             leapDays1 = ((year + 39) % 2820) * 0.24219 + a;  //38 days is the difference of epoch to
@@ -141,14 +141,22 @@ public class DateTime implements Comparable<DateTime> {
         frac0 = (int) ((leapDays0 - (int) (leapDays0)) * 1000);
         frac1 = (int) ((leapDays1 - (int) (leapDays1)) * 1000);
 
-        if (frac0 <= b && frac1 > b) {
-            return true;
-        } else {
-            return false;
-        }
+        return frac0 <= b && frac1 > b;
     }
 
-    public static DateTime readDateTime() {
+    public static DateTime readDate(String message) {
+        System.out.println(message);
+
+        int year = ScannerWrapper.readInt("Year: ");
+        int month = ScannerWrapper.readInt("Month: ");
+        int day = ScannerWrapper.readInt("Day: ");
+
+        return new DateTime(year, month, day, 0, 0, 0);
+    }
+
+    public static DateTime readDateTime(String message) {
+        System.out.println(message);
+
         int year = ScannerWrapper.readInt("Year: ");
         int month = ScannerWrapper.readInt("Month: ");
         int day = ScannerWrapper.readInt("Day: ");
@@ -157,14 +165,6 @@ public class DateTime implements Comparable<DateTime> {
         int second = ScannerWrapper.readInt("Second: ");
 
         return new DateTime(year, month, day, hour, minute, second);
-    }
-
-    public static DateTime readDate() {
-        int year = ScannerWrapper.readInt("Year: ");
-        int month = ScannerWrapper.readInt("Month: ");
-        int day = ScannerWrapper.readInt("Day: ");
-
-        return new DateTime(year, month, day, 0, 0, 0);
     }
 
     public DateTime deepCopy() {

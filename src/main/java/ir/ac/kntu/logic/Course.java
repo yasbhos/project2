@@ -1,14 +1,12 @@
 package ir.ac.kntu.logic;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
 
 import ir.ac.kntu.util.Cipher;
-
 import ir.ac.kntu.util.ScannerWrapper;
 
 public class Course {
+    public enum CourseStatus {ACTIVE_PUBLIC, ACTIVE_PRIVATE, INACTIVE, UNDEFINED}
 
     private String name;
 
@@ -18,32 +16,25 @@ public class Course {
 
     private DateTime startDate;
 
-    private String description;
-
-    private boolean openCourse;
-
-    private boolean privateCourse;
+    private CourseStatus status;
 
     private String hashedPassword;
 
-    private ArrayList<User> register;
+    private String description;
 
-    private Map<User, Double> marks;
+    private ArrayList<User> register;
 
     private ArrayList<Assignment> assignments;
 
-    public Course(String name, String institute, User lecturer, DateTime startDate, String description,
-                  boolean openCourse, boolean privateCourse, String password) {
+    public Course(String name, String institute, User lecturer, DateTime startDate, CourseStatus status, String password, String description) {
         this.name = name;
         this.institute = institute;
         this.lecturer = lecturer.deepCopy();
         this.startDate = startDate.deepCopy();
+        this.status = status;
+        this.hashedPassword = Cipher.sha256(password);
         this.description = description;
-        this.openCourse = openCourse;
-        this.privateCourse = privateCourse;
-        this.hashedPassword = Cipher.getInstance().sha256(password);
         register = new ArrayList<>();
-        marks = new HashMap<>();
         assignments = new ArrayList<>();
     }
 
@@ -63,20 +54,16 @@ public class Course {
         return startDate.deepCopy();
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public boolean isOpenCourse() {
-        return openCourse;
-    }
-
-    public boolean isPrivateCourse() {
-        return privateCourse;
+    public CourseStatus getStatus() {
+        return status;
     }
 
     public String getHashedPassword() {
         return hashedPassword;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public ArrayList<User> getRegister() {
@@ -88,32 +75,13 @@ public class Course {
         return deepCopy;
     }
 
-    public Map<User, Double> getMarks() {
-        Map<User, Double> deepCopy = new HashMap<>();
-        for (Map.Entry<User, Double> entry : marks.entrySet()) {
-            deepCopy.put(entry.getKey().deepCopy(), entry.getValue());
-        }
-
-        return deepCopy;
-    }
-
-    public void scoring(User user, double mark) {
-        marks.put(user, mark);
-    }
-
     public ArrayList<Assignment> getAssignments() {
-        ArrayList<Assignment> deepCopy = new ArrayList<>();
-        for (Assignment assignments : assignments) {
-            deepCopy.add(assignments.deepCopy());
-        }
-
-        return deepCopy;
+        return assignments;
     }
 
     public boolean register(User student) {
         if (!register.contains(student)) {
             register.add(student);
-            marks.put(student, 0.0);
             return true;
         }
 
@@ -123,7 +91,6 @@ public class Course {
     public boolean unregister(User student) {
         if (register.contains(student)) {
             register.remove(student);
-            marks.remove(student);
             return true;
         }
 
@@ -151,67 +118,53 @@ public class Course {
     public void changeHandler() {
         Options.CourseChangeMenuOption option;
         do {
-            option = Graphics.scanTheOption(Options.CourseChangeMenuOption.values(), Graphics.Color.YELLOW);
+            option = ScannerWrapper.readEnum(Options.CourseChangeMenuOption.values(), Options.Color.YELLOW.getCode());
             handleTheOption(option);
         } while (option != Options.CourseChangeMenuOption.BACK);
     }
 
     public void handleTheOption(Options.CourseChangeMenuOption option) {
         switch (option) {
-            case CHANGE_NAME:
-                this.name = ScannerWrapper.readString("Enter new name: ");
-                break;
-            case CHANGE_INSTITUTE:
-                this.institute = ScannerWrapper.readString("Enter new institute: ");
-                break;
-            case CHANGE_LECTURER:
-                System.out.println("Enter new lecturer: ");
-                this.lecturer = User.read();
-                break;
-            case CHANGE_START_DATE:
-                System.out.println("Enter new start date: ");
-                this.startDate = DateTime.readDate();
-                break;
-            case CHANGE_DESCRIPTION:
-                this.description = ScannerWrapper.readString("Enter new description: ");
-                break;
-            case CHANGE_OPEN_COURSE:
-                this.openCourse = ScannerWrapper.readBoolean("Is an open-course? (true/false): ");
-                break;
-            case CHANGE_PRIVATE_COURSE:
-                this.privateCourse = ScannerWrapper.readBoolean("Is a private-course? (true/false): ");
-                break;
-            case CHANGE_PASSWORD:
+            case CHANGE_NAME -> this.name = ScannerWrapper.readString("Enter new name: ");
+            case CHANGE_INSTITUTE -> this.institute = ScannerWrapper.readString("Enter new institute: ");
+            case CHANGE_LECTURER -> this.lecturer = User.readUser("Enter new lecturer: ");
+            case CHANGE_START_DATE -> this.startDate = DateTime.readDate("Enter new start date: ");
+            case CHANGE_DESCRIPTION -> this.description = ScannerWrapper.readString("Enter new description: ");
+            case CHANGE_STATUS -> this.status = ScannerWrapper.readEnum(CourseStatus.values());
+            case CHANGE_PASSWORD -> {
                 String oldPassword = ScannerWrapper.readPassword("Enter old password: ");
-                if (Cipher.getInstance().sha256(oldPassword).equals(hashedPassword)) {
+                assert oldPassword != null;
+                if (Cipher.sha256(oldPassword).equals(hashedPassword)) {
                     String newPassword = ScannerWrapper.readPassword("Enter new password: ");
-                    this.hashedPassword = Cipher.getInstance().sha256(newPassword);
+                    assert newPassword != null;
+                    this.hashedPassword = Cipher.sha256(newPassword);
                 } else {
                     System.out.println("Wrong password");
                 }
-                break;
-            case BACK:
-                break;
-            default:
-                System.out.println("Invalid option!");
+            }
+            case BACK -> {
+            }
+            default -> System.out.println("Invalid option!");
         }
     }
 
-    public static Course read(User lecturer) {
+    public static Course readCourse(User lecturer, String massage) {
+        System.out.println(massage);
+
         String name = ScannerWrapper.readString("Enter name: ");
         String institute = ScannerWrapper.readString("Enter institute: ");
-        System.out.println("Enter start date: ");
-        DateTime startDate = DateTime.readDate();
-        String description = ScannerWrapper.readString("Enter description: ");
-        boolean isOpenCourse = ScannerWrapper.readBoolean("Is an open-course? (true/false): ");
-        boolean isPrivateCourse = false;
+        DateTime startDate = DateTime.readDate("Enter start date");
+        CourseStatus status = ScannerWrapper.readEnum(CourseStatus.values(), Options.Color.RESET.getCode(), "Enter status: ");
         String password = "";
-        if (ScannerWrapper.readBoolean("Is a private-course? (true/false): ")) {
-            isPrivateCourse = true;
+        if (status == CourseStatus.ACTIVE_PRIVATE) {
             password = ScannerWrapper.readPassword("Enter password: ");
         }
+        if (password == null) {
+            return null;
+        }
+        String description = ScannerWrapper.readString("Enter description: ");
 
-        return new Course(name, institute, lecturer, startDate, description, isOpenCourse, isPrivateCourse, password);
+        return new Course(name, institute, lecturer, startDate, status, password, description);
     }
 
     @Override
@@ -221,9 +174,8 @@ public class Course {
                 ", institute='" + institute + '\'' +
                 ", lecturer=" + lecturer +
                 ", startDate=" + startDate +
+                ", status=" + status +
                 ", description='" + description + '\'' +
-                ", openCourse=" + openCourse +
-                ", privateCourse=" + privateCourse +
                 "}";
     }
 
@@ -264,13 +216,10 @@ public class Course {
             return false;
         }
         if (name == null) {
-            if (other.name != null) {
-                return false;
-            }
-        } else if (!name.equals(other.name)) {
-            return false;
+            return other.name == null;
+        } else {
+            return name.equals(other.name);
         }
-        return true;
     }
 
 }

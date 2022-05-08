@@ -1,6 +1,5 @@
 package ir.ac.kntu.logic;
 
-import ir.ac.kntu.logic.Graphics.Color;
 import ir.ac.kntu.util.ScannerWrapper;
 
 import java.util.Map;
@@ -8,14 +7,10 @@ import java.util.HashMap;
 import java.util.ArrayList;
 
 public class Question {
+    //TODO: Make other children to support other type of questions
+    public enum QuestionLevel {EASY, MEDIUM, HARD, VERY_HARD, UNDEFINED}
 
-    public enum QuestionLevel {
-        EASY, MEDIUM, HARD, VERY_HARD, UNDEFINED
-    }
-
-    public enum QuestionType {
-        CHOICE_ONE, SHORT_ANSWER, LONG_ANSWER, FILL_IN_THE_BLANK, UNDEFINED
-    }
+    public enum QuestionType {CHOICE_ONE, SHORT_ANSWER, LONG_ANSWER, FILL_IN_THE_BLANK, UNDEFINED}
 
     private String name;
 
@@ -27,18 +22,15 @@ public class Question {
 
     private QuestionType type;
 
-    private String answer;
+    private Map<User, ArrayList<Answer>> sentAnswers;
 
-    private Map<User, ArrayList<Answer>> answers;
-
-    public Question(String name, double score, String description, QuestionLevel level, QuestionType type, String answer) {
+    public Question(String name, double score, String description, QuestionLevel level, QuestionType type) {
         this.name = name;
         this.score = score;
         this.description = description;
         this.level = level;
         this.type = type;
-        this.answer = answer;
-        this.answers = new HashMap<>();
+        this.sentAnswers = new HashMap<>();
     }
 
     public String getName() {
@@ -61,58 +53,51 @@ public class Question {
         return type;
     }
 
-    public String getAnswer() {
-        return answer;
-    }
-
-    public Map<User, ArrayList<Answer>> getAnswers() {
-        return answers;
+    public Map<User, ArrayList<Answer>> getSentAnswers() {
+        return sentAnswers;
     }
 
     public void addAnswer(User user, Answer answer) {
-        if (type == QuestionType.CHOICE_ONE || type == QuestionType.SHORT_ANSWER) {
-            if (answer.getDescription().equals(this.answer)) {
-                answer.setScore(score);
-            }
-        }
-
-        if (answers.containsKey(user)) {
-            ArrayList<Answer> userAnswers = answers.get(user);
+        if (sentAnswers.containsKey(user)) {
+            ArrayList<Answer> userAnswers = sentAnswers.get(user);
             userAnswers.get(userAnswers.size() - 1).setFinalSent(false);
-            answers.get(user).add(answer);
+            userAnswers.add(answer);
         } else {
             ArrayList<Answer> userAnswers = new ArrayList<>();
             userAnswers.add(answer);
-            answers.put(user, userAnswers);
+            sentAnswers.put(user, userAnswers);
         }
+        //TODO: update scoreBoard(maybe just when we have auto pointing)
     }
 
     public void removeAnswer(User user, Answer answer) {
-        if (answers.containsKey(user)) {
-            answers.get(user).remove(answer);
-        }
+        sentAnswers.get(user).remove(answer);
+        //TODO: update scoreBoard(complete at the end of developing)
     }
 
     public Answer getFinalAnswer(User user) {
-        if (answers.containsKey(user)) {
-            ArrayList<Answer> userAnswers = answers.get(user);
-            for (Answer answer : userAnswers) {
-                if (answer.isFinalSent()) {
-                    return answer;
-                }
+        if (!sentAnswers.containsKey(user)) {
+            return null;
+        }
+        ArrayList<Answer> userAnswers = sentAnswers.get(user);
+        for (Answer answer : userAnswers) {
+            if (answer.isFinalSent()) {
+                return answer;
             }
         }
 
-        return null;    
+        return null;
     }
 
-    public static Question read() {
+    public static Question readQuestion(String message) {
+        System.out.println(message);
+
         String name = ScannerWrapper.readString("Enter question name: ");
         double score = ScannerWrapper.readDouble("Enter question score: ");
         String description = ScannerWrapper.readString("Enter question description: \n");
         QuestionLevel level;
         do {
-            level = Graphics.scanTheOption(QuestionLevel.values(), Color.WHITE);
+            level = ScannerWrapper.readEnum(QuestionLevel.values());
             if (level == QuestionLevel.UNDEFINED) {
                 System.out.println("Please enter a valid question level.");
             }
@@ -120,19 +105,17 @@ public class Question {
 
         QuestionType type;
         do {
-            type = Graphics.scanTheOption(QuestionType.values(), Color.WHITE);
+            type = ScannerWrapper.readEnum(QuestionType.values());
             if (type == QuestionType.UNDEFINED) {
                 System.out.println("Please enter a valid question type.");
             }
         } while (type == QuestionType.UNDEFINED);
 
-        String answer = ScannerWrapper.readString("Enter question answer: ");
-
-        return new Question(name, score, description, level, type, answer);
+        return new Question(name, score, description, level, type);
     }
 
     public Question deepCopy() {
-        return new Question(name, score, description, level, type, answer);
+        return new Question(name, score, description, level, type);
     }
 
     @Override

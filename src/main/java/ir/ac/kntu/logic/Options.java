@@ -1,6 +1,22 @@
 package ir.ac.kntu.logic;
 
 public class Options {
+    public enum Color {
+        RED("\u001B[31m"), GREEN("\u001B[32m"),
+        YELLOW("\u001B[33m"), BLUE("\u001B[34m"),
+        RESET("\u001B[0m");
+
+        private final String code;
+
+        Color(String code) {
+            this.code = code;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+
     public enum LoginMenuOption {
         SIGN_UP, LOGIN, EXIT, UNDEFINED
     }
@@ -37,19 +53,19 @@ public class Options {
     }
 
     public enum UserChangeMenuOption {
-        CHANGE_NAME, CHANGE_USERNAME, CHANGE_PASSWORD, CHANGE_EMAIL,
+        CHANGE_FIRST_NAME, CHANGE_USERNAME, CHANGE_PASSWORD, CHANGE_EMAIL,
         CHANGE_PHONE_NUMBER, CHANGE_NATIONAL_CODE, BACK, UNDEFINED
     }
 
     public enum CourseChangeMenuOption {
-        CHANGE_NAME, CHANGE_INSTITUTE, CHANGE_LECTURER, CHANGE_START_DATE, CHANGE_DESCRIPTION,
-        CHANGE_OPEN_COURSE, CHANGE_PRIVATE_COURSE, CHANGE_PASSWORD, BACK, UNDEFINED
+        CHANGE_NAME, CHANGE_INSTITUTE, CHANGE_LECTURER, CHANGE_START_DATE,
+        CHANGE_STATUS, CHANGE_PASSWORD, CHANGE_DESCRIPTION, BACK, UNDEFINED
     }
 
     public enum AssignmentChangeMenuOption {
         CHANGE_NAME, CHANGE_DESCRIPTION, CHANGE_START_DATE, CHANGE_END_DATE,
-        CHANGE_DELAY_COEFFICIENT, CHANGE_DELAY_DATETIME, CHANGE_ASSIGNMENT_STATE,
-        CHANGE_SCOREBOARD_STATE, BACK, UNDEFINED
+        CHANGE_DELAY_COEFFICIENT, CHANGE_DELAY_DATETIME, CHANGE_ASSIGNMENT_STATUS,
+        CHANGE_SCOREBOARD_STATUS, BACK, UNDEFINED
     }
 
 }
