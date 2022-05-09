@@ -80,12 +80,7 @@ public class Assignment {
     }
 
     public void addQuestion(Question question) {
-        this.questions.add(question.deepCopy());
-    }
-
-    public void removeQuestion(Question question) {
-        this.questions.remove(question);
-        //TODO: update scoreBoard(complete at the of developing)
+        this.questions.add(question);
     }
 
     public Map<User, Double> getScoreBoard() {
@@ -98,7 +93,6 @@ public class Assignment {
     }
 
     public void scoreBoard() {
-        //TODO: sorting by mark and total sent date&times
         for (Map.Entry<User, Double> entry : scoreBoard.entrySet()) {
             System.out.println(entry.getKey().getFirstname() + ": " + entry.getValue());
         }

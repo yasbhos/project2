@@ -264,7 +264,7 @@ public class Courses {
         course.addAssignment(assignment);
     }
 
-    public void addAnswer() {
+    public void addAnswerToQuestionOfAssignment() {
         Course course = searchCourse();
         if (course == null) {
             System.out.println("add answer process failed");
@@ -290,6 +290,17 @@ public class Courses {
         Question question = searchQuestion(assignment);
         if (question == null) {
             System.out.println("add answer process failed");
+            return;
+        }
+
+        Answer answer = Answer.readAnswer("Enter answer attributes");
+        question.addAnswer(currentUser, answer);
+    }
+
+    public void addAnswerToQuestionOfQuestionBack() {
+        Question question = searchQuestionInQuestionBank();
+        if (question == null) {
+            System.out.println("Add answer process failed");
             return;
         }
 
@@ -348,10 +359,6 @@ public class Courses {
         }
 
         assignment.changeHandler();
-    }
-
-    public void changeQuestion() {
-        //TODO: Complete
     }
 
     public void changeAnswer() {
@@ -444,10 +451,6 @@ public class Courses {
         course.removeAssignment(assignment);
     }
 
-    public void removeQuestion() {
-        //TODO: Complete
-    }
-
     public void removeAnswer() {
         Course course = searchCourse();
         if (course == null) {
@@ -507,6 +510,11 @@ public class Courses {
         }
 
         for (Assignment assignment : course.getAssignments()) {
+            if (assignment.getAssignmentStatus() == Assignment.Status.INACTIVE) {
+                continue;
+            } else if (assignment.getStartDate().compareTo(DateTime.now()) > 0) {
+                continue;
+            }
             System.out.println(assignment);
         }
     }
@@ -544,18 +552,6 @@ public class Courses {
         for (Question question : questionsBank) {
             System.out.println(question);
         }
-    }
-
-    public void listOfSentAnswers() {
-        //TODO: Complete
-    }
-
-    public void listOfFinalSentAnswers() {
-        //TODO: Complete
-    }
-
-    public void listOfFinalSentAndPointing() {
-        //TODO: Complete
     }
 
     //Courses program, other-menu options handler
@@ -634,7 +630,11 @@ public class Courses {
             return;
         }
 
-        assignment.scoreBoard();
+        if (course.getLecturer().equals(currentUser)) {
+            assignment.scoreBoard();
+        } else if (assignment.getScoreBoardStatus() == Assignment.Status.INACTIVE) {
+            System.out.println("ScoreBoard is not active");
+        }
     }
 
     public void pointing() {

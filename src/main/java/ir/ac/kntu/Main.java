@@ -120,7 +120,8 @@ public class Main {
             case ADD_QUESTION_TO_ASSIGNMENT_FROM_QUESTION_BANK -> courses.addQuestionToAssignmentFromQuestionBank();
             case ADD_QUESTION_TO_QUESTION_BANK -> courses.addQuestionToQuestionBank();
             case ADD_ASSIGNMENT -> courses.addAssignment();
-            case ADD_ANSWER -> courses.addAnswer();
+            case ADD_ANSWER_TO_QUESTION_OF_ASSIGNMENT -> courses.addAnswerToQuestionOfAssignment();
+            case ADD_ANSWER_TO_QUESTION_OF_QUESTION_BACK -> courses.addAnswerToQuestionOfQuestionBack();
             case UNDEFINED -> System.out.println("Invalid option!");
             default -> {}
         }
@@ -130,7 +131,6 @@ public class Main {
         switch (changeMenuOption) {
             case CHANGE_USER -> courses.changeUser();
             case CHANGE_COURSE -> courses.changeCourse();
-            case CHANGE_QUESTION -> courses.changeQuestion();
             case CHANGE_ASSIGNMENT -> courses.changeAssignment();
             case CHANGE_ANSWER -> courses.changeAnswer();
             case UNDEFINED -> System.out.println("Invalid option!");
@@ -142,7 +142,6 @@ public class Main {
         switch (removeMenuOption) {
             case REMOVE_USER -> courses.removeUser();
             case REMOVE_COURSE -> courses.removeCourse();
-            case REMOVE_QUESTION -> courses.removeQuestion();
             case REMOVE_ASSIGNMENT -> courses.removeAssignment();
             case REMOVE_ANSWER -> courses.removeAnswer();
             case UNDEFINED -> System.out.println("Invalid option!");
@@ -157,9 +156,6 @@ public class Main {
             case LIST_OF_ASSIGNMENTS -> courses.listOfAssignments();
             case LIST_OF_ANSWERS -> courses.listOfAnswers();
             case QUESTION_BANK -> courses.listQuestionBank();
-            case LIST_OF_SEND_ANSWERS -> courses.listOfSentAnswers();
-            case LIST_OF_FINAL_SENDS -> courses.listOfFinalSentAnswers();
-            case LIST_OF_FINAL_SENDS_AND_POINTING -> courses.listOfFinalSentAndPointing();
             case UNDEFINED -> System.out.println("Invalid option!");
             default -> {}
         }

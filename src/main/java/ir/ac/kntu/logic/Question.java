@@ -1,17 +1,14 @@
 package ir.ac.kntu.logic;
 
 import ir.ac.kntu.util.ScannerWrapper;
+import ir.ac.kntu.logic.Options.QuestionLevel;
+import ir.ac.kntu.logic.Options.QuestionType;
 
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 
 public class Question {
-    //TODO: Make other children to support other type of questions
-    public enum QuestionLevel {EASY, MEDIUM, HARD, VERY_HARD, UNDEFINED}
-
-    public enum QuestionType {CHOICE_ONE, SHORT_ANSWER, LONG_ANSWER, FILL_IN_THE_BLANK, UNDEFINED}
-
     private String name;
 
     private double score;
@@ -67,12 +64,10 @@ public class Question {
             userAnswers.add(answer);
             sentAnswers.put(user, userAnswers);
         }
-        //TODO: update scoreBoard(maybe just when we have auto pointing)
     }
 
     public void removeAnswer(User user, Answer answer) {
         sentAnswers.get(user).remove(answer);
-        //TODO: update scoreBoard(complete at the end of developing)
     }
 
     public Answer getFinalAnswer(User user) {
@@ -92,17 +87,6 @@ public class Question {
     public static Question readQuestion(String message) {
         System.out.println(message);
 
-        String name = ScannerWrapper.readString("Enter question name: ");
-        double score = ScannerWrapper.readDouble("Enter question score: ");
-        String description = ScannerWrapper.readString("Enter question description: \n");
-        QuestionLevel level;
-        do {
-            level = ScannerWrapper.readEnum(QuestionLevel.values());
-            if (level == QuestionLevel.UNDEFINED) {
-                System.out.println("Please enter a valid question level.");
-            }
-        } while (level == QuestionLevel.UNDEFINED);
-
         QuestionType type;
         do {
             type = ScannerWrapper.readEnum(QuestionType.values());
@@ -111,11 +95,16 @@ public class Question {
             }
         } while (type == QuestionType.UNDEFINED);
 
-        return new Question(name, score, description, level, type);
-    }
+        switch (type) {
+            case SHORT_ANSWER -> ShortAnswerQuestion.read();
+            case LONG_ANSWER -> LongAnswerQuestion.read();
+            case CHOICE_ONE -> ChoiceOneQuestion.read();
+            case FILL_IN_THE_BLANK -> FillBlankQuestion.read();
+            case UNDEFINED -> {}
+            default -> {}
+        }
 
-    public Question deepCopy() {
-        return new Question(name, score, description, level, type);
+        return null;
     }
 
     @Override
