@@ -80,14 +80,14 @@ public final class ScannerWrapper {
         if (userInput >= 0 && userInput < options.length) {
             return options[userInput];
         }
-
-        return options[options.length - 1];
+        System.out.println("Invalid option!");
+        return scanTheEnum(options);
     }
 
     private static <T extends Enum<T>> void showOptions(T[] options) {
         System.out.println("******************************");
-        for (int i = 0; i < options.length - 1; i++) {
-            System.out.println((i + 1) + ". " + options[i].name());
+        for (int i = 0; i < options.length; i++) {
+            System.out.printf("%2d. %s\n", i + 1, options[i].name());
         }
         System.out.println("******************************");
         System.out.println("Please enter your choice: ");

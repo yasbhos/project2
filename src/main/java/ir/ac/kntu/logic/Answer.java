@@ -1,37 +1,62 @@
 package ir.ac.kntu.logic;
 
-import ir.ac.kntu.util.ScannerWrapper;
-
 public class Answer {
 
-    private String description;
+    private String senderUsername;
+
+    private Question question;
 
     private DateTime sentDateTime;
 
+    private double delayCoefficient;
+
     private double score;
+
+    private double scoreWithDelay;
 
     private boolean finalSent;
 
-    public Answer(String description, DateTime sentDateTime, boolean finalSent) {
+    private String description;
+
+    public Answer(String senderUsername, Question question, String description) {
+        this.senderUsername = senderUsername;
+        this.question = question;
+        this.sentDateTime = DateTime.now();
+        this.finalSent = true;
         this.description = description;
-        this.sentDateTime = sentDateTime.deepCopy();
-        this.finalSent = finalSent;
+    }
+
+    public String getSenderUsername() {
+        return senderUsername;
+    }
+
+    public Question getQuestion() {
+        return question;
     }
 
     public DateTime getSentDateTime() {
-        return sentDateTime.deepCopy();
+        return sentDateTime;
     }
 
-    public void setSentDateTime(DateTime sentDateTime) {
-        this.sentDateTime = sentDateTime.deepCopy();
+    public double getDelayCoefficient() {
+        return delayCoefficient;
     }
 
-    public String getDescription() {
-        return description;
+    public void setDelayCoefficient(int delayCoefficient) {
+        this.delayCoefficient = delayCoefficient;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public double getScore() {
+        return score;
+    }
+
+    public void setScore(double score) {
+        this.score = score;
+        this.scoreWithDelay = (1 - delayCoefficient / 100) * this.score;
+    }
+
+    public double getScoreWithDelay() {
+        return scoreWithDelay;
     }
 
     public boolean isFinalSent() {
@@ -42,28 +67,25 @@ public class Answer {
         this.finalSent = finalSent;
     }
 
-    public double getScore() {
-        return score;
+    public String getDescription() {
+        return description;
     }
 
-    public void setScore(double score) {
-        this.score = score;
-    }
-
-    public static Answer readAnswer(String message) {
-        System.out.println(message);
-        String description = ScannerWrapper.readString("Enter answer: ");
-
-        return new Answer(description, DateTime.now(), true);
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override
     public String toString() {
         return "Answer{" +
-                "description='" + description + '\'' +
+                "senderUsername='" + senderUsername + '\'' +
+                ", question=" + question +
                 ", sentDateTime=" + sentDateTime +
-                ", finalSent=" + finalSent +
+                ", delayCoefficient=" + delayCoefficient +
                 ", score=" + score +
+                ", scoreWithDelay=" + scoreWithDelay +
+                ", finalSent=" + finalSent +
+                ", description='" + description + '\'' +
                 '}';
     }
 

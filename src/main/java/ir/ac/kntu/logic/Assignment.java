@@ -4,10 +4,21 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 
+import ir.ac.kntu.Main;
 import ir.ac.kntu.util.ScannerWrapper;
+import ir.ac.kntu.logic.Options.Color;
 
 public class Assignment {
-    public enum Status {ACTIVE, INACTIVE, UNDEFINED}
+    public enum Status {ACTIVE, INACTIVE}
+
+    public enum StudentOption {LIST_OF_QUESTIONS, LIST_OF_FINAL_SENT_ANSWERS, SCOREBOARD, BACK}
+
+    public enum LecturerOption {
+        CHANGE_NAME, CHANGE_DESCRIPTION, CHANGE_START_DATE, CHANGE_END_DATE,
+        CHANGE_DELAY_COEFFICIENT, CHANGE_DELAY_DATETIME, CHANGE_ASSIGNMENT_STATUS,
+        CHANGE_SCOREBOARD_STATUS, LIST_OF_QUESTIONS, ADD_QUESTION_TO_ASSIGNMENT,
+        REMOVE_QUESTION, SCOREBOARD, REGISTER_MARK_TO_FINAL_SENDS, BACK
+    }
 
     private String name;
 
@@ -27,20 +38,17 @@ public class Assignment {
 
     private ArrayList<Question> questions;
 
-    private Map<User, Double> scoreBoard;
-
     public Assignment(String name, String description, DateTime startDate, DateTime endDate, int delayCoefficient,
-                      DateTime delayDateTime, Status assignmentStatus, Status scoreBoardStatus, ArrayList<Question> questions) {
+                      DateTime delayDateTime, Status assignmentStatus, Status scoreBoardStatus) {
         this.name = name;
         this.description = description;
-        this.startDate = startDate.deepCopy();
-        this.endDate = endDate.deepCopy();
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.delayCoefficient = delayCoefficient;
-        this.delayDateTime = delayDateTime.deepCopy();
+        this.delayDateTime = delayDateTime;
         this.assignmentStatus = assignmentStatus;
         this.scoreBoardStatus = scoreBoardStatus;
-        this.questions = questions;
-        this.scoreBoard = new HashMap<>();
+        this.questions = new ArrayList<>();
     }
 
     public String getName() {
@@ -52,11 +60,11 @@ public class Assignment {
     }
 
     public DateTime getStartDate() {
-        return startDate.deepCopy();
+        return startDate;
     }
 
     public DateTime getEndDate() {
-        return endDate.deepCopy();
+        return endDate;
     }
 
     public int getDelayCoefficient() {
@@ -64,7 +72,7 @@ public class Assignment {
     }
 
     public DateTime getDelayDateTime() {
-        return delayDateTime.deepCopy();
+        return delayDateTime;
     }
 
     public Status getAssignmentStatus() {
@@ -83,45 +91,57 @@ public class Assignment {
         this.questions.add(question);
     }
 
-    public Map<User, Double> getScoreBoard() {
-        Map<User, Double> deepCopyOfScoreBoard = new HashMap<>();
-        for (Map.Entry<User, Double> entry : scoreBoard.entrySet()) {
-            deepCopyOfScoreBoard.put(entry.getKey().deepCopy(), entry.getValue());
-        }
-
-        return deepCopyOfScoreBoard;
+    public void studentHandler() {
+        StudentOption option;
+        do {
+            option = ScannerWrapper.readEnum(StudentOption.values(), Color.YELLOW.getCode());
+            studentOptionHandler(option);
+        } while (option != StudentOption.BACK);
     }
 
-    public void scoreBoard() {
-        for (Map.Entry<User, Double> entry : scoreBoard.entrySet()) {
-            System.out.println(entry.getKey().getFirstname() + ": " + entry.getValue());
-        }
-    }
-
-    public void pointing() {
-        for (Question question : questions) {
-            for (User user : question.getSentAnswers().keySet()) {
-                System.out.println(user.getFirstname() + ": " + question.getFinalAnswer(user));
-                double score = ScannerWrapper.readDouble("Enter score: ");
-                question.getFinalAnswer(user).setScore(score);
-                if (scoreBoard.containsKey(user)) {
-                    scoreBoard.put(user, scoreBoard.get(user) + score);
-                } else {
-                    scoreBoard.put(user, score);
+    private void studentOptionHandler(StudentOption option) {
+        switch (option) {
+            case LIST_OF_QUESTIONS -> {
+                Question question = searchQuestion();
+                if (question != null) {
+                    question.studentHandler(Main.currentUser);
                 }
             }
+            case LIST_OF_FINAL_SENT_ANSWERS -> {
+                for (Question question : questions) {
+                    ArrayList<Answer> answers = question.getSentAnswers().get(Main.currentUser);
+                    if (answers == null) {
+                        continue;
+                    }
+                    for (Answer answer : answers) {
+                        if (answer.isFinalSent()) {
+                            System.out.println(answer);
+                        }
+                    }
+                }
+            }
+            case SCOREBOARD -> {
+                if (scoreBoardStatus == Status.ACTIVE) {
+                    scoreBoard();
+                } else {
+                    System.out.println("Scoreboard is not active.");
+                }
+            }
+            case BACK -> {
+            }
+            default -> {}
         }
     }
 
-    public void changeHandler() {
-        Options.AssignmentChangeMenuOption option;
+    public void lecturerHandler() {
+        LecturerOption option;
         do {
-            option = ScannerWrapper.readEnum(Options.AssignmentChangeMenuOption.values(), Options.Color.YELLOW.getCode());
-            handleTheOption(option);
-        } while (option != Options.AssignmentChangeMenuOption.BACK);
+            option = ScannerWrapper.readEnum(LecturerOption.values(), Color.YELLOW.getCode());
+            lecturerOptionHandler(option);
+        } while (option != LecturerOption.BACK);
     }
 
-    public void handleTheOption(Options.AssignmentChangeMenuOption option) {
+    private void lecturerOptionHandler(LecturerOption option) {
         switch (option) {
             case CHANGE_NAME -> this.name = ScannerWrapper.readString("Enter new name: ");
             case CHANGE_DESCRIPTION -> this.description = ScannerWrapper.readString("Enter new description: ");
@@ -131,25 +151,94 @@ public class Assignment {
             case CHANGE_DELAY_DATETIME -> this.delayDateTime = DateTime.readDateTime("Enter new delay date and time: ");
             case CHANGE_ASSIGNMENT_STATUS -> this.assignmentStatus = ScannerWrapper.readEnum(Status.values());
             case CHANGE_SCOREBOARD_STATUS -> this.scoreBoardStatus = ScannerWrapper.readEnum(Status.values());
-            case UNDEFINED -> {
+            case LIST_OF_QUESTIONS -> {
+                Question question = searchQuestion();
+                if (question != null) {
+                    question.lecturerHandler();
+                }
             }
-            default -> System.out.println("Invalid option!");
+            case ADD_QUESTION_TO_ASSIGNMENT -> {
+                String choice = ScannerWrapper.readString("New question or existing question? (n/e): ");
+                if (choice.equals("n")) {
+                    Question question = Question.readQuestion("Enter question: ");
+                    this.addQuestion(question);
+                } else if (choice.equals("e")) {
+                    Question question = Main.searchQuestion();
+                    if (question != null) {
+                        this.addQuestion(question.copy());
+                    }
+                } else {
+                    System.out.println("Invalid choice");
+                }
+            }
+            case REMOVE_QUESTION -> questions.remove(searchQuestion());
+            case SCOREBOARD -> scoreBoard();
+            case REGISTER_MARK_TO_FINAL_SENDS -> registerMarkToFinalSent();
+            case BACK -> {
+            }
+            default -> {}
         }
+    }
+
+    private Question searchQuestion() {
+        for (int i = 0; i < this.questions.size(); i++) {
+            System.out.println(i + 1 + ". " + this.questions.get(i).getName());
+        }
+        int index = ScannerWrapper.readInt("Enter question index: ");
+        return this.questions.get(index - 1);
+    }
+
+    public void scoreBoard() {
+        System.out.println("Scoreboard for " + this.name);
+        System.out.println("------------------------------------------------------------");
+        System.out.println("| Student name | Mark |");
+        Map<User, Double> marks = new HashMap<>();
+        for (Question question : questions) {
+            for (Map.Entry<User, ArrayList<Answer>> entry : question.getSentAnswers().entrySet()) {
+                ArrayList<Answer> answers = question.getSentAnswers().get(entry.getKey());
+                if (marks.containsKey(entry.getKey())) {
+                    marks.put(entry.getKey(), marks.get(entry.getKey()) + answers.get(answers.size() - 1).getScoreWithDelay());
+                } else {
+                    marks.put(entry.getKey(), answers.get(answers.size() - 1).getScoreWithDelay());
+                }
+            }
+        }
+        for (Map.Entry<User, Double> entry : marks.entrySet()) {
+            System.out.println("| " + entry.getKey().getUsername() + " | " + entry.getValue() + " |");
+        }
+        System.out.println("------------------------------------------------------------");
+    }
+
+    public void registerMarkToFinalSent() {
+        System.out.println("Register mark to final sent for " + this.name);
+        System.out.println("------------------------------------------------------------");
+        for (int i = 0; i < this.questions.size(); i++) {
+            Question question = this.questions.get(i);
+            System.out.println(i + 1 + ". " + question.getName());
+            for (User user : question.getSentAnswers().keySet()) {
+                System.out.println(user.getFirstName() + ": ");
+                ArrayList<Answer> answers = question.getSentAnswers().get(user);
+                answers.get(answers.size() - 1).setDelayCoefficient(delayCoefficient);
+                System.out.println(answers.get(answers.size() -1));
+                Double mark = ScannerWrapper.readDouble("Enter mark: ");
+                answers.get(answers.size() - 1).setScore(mark);
+            }
+        }
+        System.out.println("------------------------------------------------------------");
     }
 
     public static Assignment readAssignment(String message) {
         System.out.println(message);
-
         String name = ScannerWrapper.readString("Enter name: ");
         String description = ScannerWrapper.readString("Enter description: ");
         DateTime startDate = DateTime.readDateTime("Enter start date: ");
         DateTime endDate = DateTime.readDateTime("Enter end date: ");
         int delayCoefficient = ScannerWrapper.readInt("Enter delay coefficient: ");
         DateTime delayDate = DateTime.readDateTime("Enter delay date and time: ");
-        Status assignmentStatus = ScannerWrapper.readEnum(Status.values(), Options.Color.RESET.getCode(), "Enter assignment state: ");
-        Status scoreBoardStatus = ScannerWrapper.readEnum(Status.values(), Options.Color.RESET.getCode(), "Enter score board state: ");
+        Status assignmentStatus = ScannerWrapper.readEnum(Status.values(), Color.RESET.getCode(), "Enter assignment state: ");
+        Status scoreBoardStatus = ScannerWrapper.readEnum(Status.values(), Color.RESET.getCode(), "Enter scoreBoard state: ");
 
-        return new Assignment(name, description, startDate, endDate, delayCoefficient, delayDate, assignmentStatus, scoreBoardStatus, new ArrayList<>());
+        return new Assignment(name, description, startDate, endDate, delayCoefficient, delayDate, assignmentStatus, scoreBoardStatus);
     }
 
     @Override

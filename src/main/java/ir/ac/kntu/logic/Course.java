@@ -2,11 +2,25 @@ package ir.ac.kntu.logic;
 
 import java.util.ArrayList;
 
+import ir.ac.kntu.Main;
 import ir.ac.kntu.util.Cipher;
 import ir.ac.kntu.util.ScannerWrapper;
+import ir.ac.kntu.logic.Options.Color;
 
 public class Course {
-    public enum CourseStatus {ACTIVE_PUBLIC, ACTIVE_PRIVATE, INACTIVE, UNDEFINED}
+    public enum CourseStatus {
+        OPEN_PUBLIC, OPEN_PRIVATE, CLOSE
+    }
+
+    public enum StudentOption {
+        LIST_OF_ASSIGNMENTS, BACK
+    }
+
+    public enum LecturerOption {
+        CHANGE_NAME, CHANGE_INSTITUTE, CHANGE_LECTURER, CHANGE_START_DATE, CHANGE_STATUS,
+        CHANGE_PASSWORD, CHANGE_DESCRIPTION, REGISTER_STUDENT_TO_COURSE, LIST_OF_ASSIGNMENTS,
+        REMOVE_ASSIGNMENT, ADD_ASSIGNMENT, BACK
+    }
 
     private String name;
 
@@ -26,11 +40,12 @@ public class Course {
 
     private ArrayList<Assignment> assignments;
 
-    public Course(String name, String institute, User lecturer, DateTime startDate, CourseStatus status, String password, String description) {
+    public Course(String name, String institute, User lecturer, DateTime startDate, CourseStatus status,
+                  String password, String description) {
         this.name = name;
         this.institute = institute;
-        this.lecturer = lecturer.deepCopy();
-        this.startDate = startDate.deepCopy();
+        this.lecturer = lecturer;
+        this.startDate = startDate;
         this.status = status;
         this.hashedPassword = Cipher.sha256(password);
         this.description = description;
@@ -47,11 +62,11 @@ public class Course {
     }
 
     public User getLecturer() {
-        return lecturer.deepCopy();
+        return lecturer;
     }
 
     public DateTime getStartDate() {
-        return startDate.deepCopy();
+        return startDate;
     }
 
     public CourseStatus getStatus() {
@@ -67,12 +82,7 @@ public class Course {
     }
 
     public ArrayList<User> getRegister() {
-        ArrayList<User> deepCopy = new ArrayList<>();
-        for (User user : register) {
-            deepCopy.add(user.deepCopy());
-        }
-
-        return deepCopy;
+        return register;
     }
 
     public ArrayList<Assignment> getAssignments() {
@@ -84,83 +94,122 @@ public class Course {
             register.add(student);
             return true;
         }
-
         return false;
     }
 
-    public boolean unregister(User student) {
-        if (register.contains(student)) {
-            register.remove(student);
-            return true;
-        }
-
-        return false;
+    private boolean addAssignment(Assignment assignment) {
+        return assignments.add(assignment);
     }
 
-    public boolean addAssignment(Assignment assignment) {
-        if (!assignments.contains(assignment)) {
-            assignments.add(assignment);
-            return true;
-        }
-
-        return false;
+    private boolean removeAssignment(Assignment assignment) {
+        return assignments.remove(assignment);
     }
 
-    public boolean removeAssignment(Assignment assignment) {
-        if (assignments.contains(assignment)) {
-            assignments.remove(assignment);
-            return true;
-        }
-
-        return false;
-    }
-
-    public void changeHandler() {
-        Options.CourseChangeMenuOption option;
+    public void lecturerHandler() {
+        LecturerOption option;
         do {
-            option = ScannerWrapper.readEnum(Options.CourseChangeMenuOption.values(), Options.Color.YELLOW.getCode());
-            handleTheOption(option);
-        } while (option != Options.CourseChangeMenuOption.BACK);
+            option = ScannerWrapper.readEnum(LecturerOption.values(), Color.YELLOW.getCode());
+            lecturerOptionHandler(option);
+        } while (option != LecturerOption.BACK);
     }
 
-    public void handleTheOption(Options.CourseChangeMenuOption option) {
+    private void lecturerOptionHandler(LecturerOption option) {
         switch (option) {
             case CHANGE_NAME -> this.name = ScannerWrapper.readString("Enter new name: ");
             case CHANGE_INSTITUTE -> this.institute = ScannerWrapper.readString("Enter new institute: ");
             case CHANGE_LECTURER -> this.lecturer = User.readUser("Enter new lecturer: ");
             case CHANGE_START_DATE -> this.startDate = DateTime.readDate("Enter new start date: ");
-            case CHANGE_DESCRIPTION -> this.description = ScannerWrapper.readString("Enter new description: ");
             case CHANGE_STATUS -> this.status = ScannerWrapper.readEnum(CourseStatus.values());
             case CHANGE_PASSWORD -> {
                 String oldPassword = ScannerWrapper.readPassword("Enter old password: ");
-                assert oldPassword != null;
+                if (oldPassword == null) {
+                    return;
+                }
                 if (Cipher.sha256(oldPassword).equals(hashedPassword)) {
                     String newPassword = ScannerWrapper.readPassword("Enter new password: ");
-                    assert newPassword != null;
+                    if (newPassword == null) {
+                        return;
+                    }
                     this.hashedPassword = Cipher.sha256(newPassword);
                 } else {
                     System.out.println("Wrong password");
                 }
             }
+            case CHANGE_DESCRIPTION -> this.description = ScannerWrapper.readString("Enter new description: ");
+            case REGISTER_STUDENT_TO_COURSE -> register(Main.searchUser());
+            case LIST_OF_ASSIGNMENTS -> {
+                Assignment assignment = searchAssignment();
+                if (assignment != null) {
+                    assignment.lecturerHandler();
+                }
+            }
+            case ADD_ASSIGNMENT -> {
+                Assignment assignment = Assignment.readAssignment("Enter assignment: ");
+                addAssignment(assignment);
+            }
+            case REMOVE_ASSIGNMENT -> removeAssignment(searchAssignment());
             case BACK -> {
             }
-            default -> System.out.println("Invalid option!");
+            default -> {}
         }
+    }
+
+    public void studentHandler() {
+        StudentOption option;
+        do {
+            option = ScannerWrapper.readEnum(StudentOption.values(), Color.YELLOW.getCode());
+            studentOptionHandler(option);
+        } while (option != StudentOption.BACK);
+    }
+
+    private void studentOptionHandler(StudentOption option) {
+        switch (option) {
+            case LIST_OF_ASSIGNMENTS -> {
+                Assignment assignment;
+                for (int i = 0; i < assignments.size(); i++) {
+                    assignment = assignments.get(i);
+                    if (assignment.getAssignmentStatus() == Assignment.Status.ACTIVE && 
+                            assignment.getStartDate().compareTo(DateTime.now()) <= 0) {
+                        System.out.println(i + 1 + ". " + assignment.getName());
+                    }
+                }
+
+                int index = ScannerWrapper.readInt("Enter assignment index: ");
+                if (index > 0 && index <= assignments.size()) {
+                    assignments.get(index - 1).studentHandler();
+                } else {
+                    System.out.println("Wrong index");
+                }
+            }
+            case BACK -> {
+            }
+            default -> {}
+        }
+    }
+
+    private Assignment searchAssignment() {
+        for (int i = 0; i < assignments.size(); i++) {
+            System.out.println(i + 1 + ". " + assignments.get(i).getName());
+        }
+        int index = ScannerWrapper.readInt("Enter assignment index: ");
+        if (index > 0 && index <= assignments.size()) {
+            return assignments.get(index - 1);
+        }
+        return null;
     }
 
     public static Course readCourse(User lecturer, String massage) {
         System.out.println(massage);
-
         String name = ScannerWrapper.readString("Enter name: ");
         String institute = ScannerWrapper.readString("Enter institute: ");
         DateTime startDate = DateTime.readDate("Enter start date");
-        CourseStatus status = ScannerWrapper.readEnum(CourseStatus.values(), Options.Color.RESET.getCode(), "Enter status: ");
-        String password = "";
-        if (status == CourseStatus.ACTIVE_PRIVATE) {
+        CourseStatus status = ScannerWrapper.readEnum(CourseStatus.values(), Color.RESET.getCode(), "Enter status: ");
+        String password = null;
+        if (status == CourseStatus.OPEN_PRIVATE) {
             password = ScannerWrapper.readPassword("Enter password: ");
-        }
-        if (password == null) {
-            return null;
+            if (password == null) {
+                return null;
+            }
         }
         String description = ScannerWrapper.readString("Enter description: ");
 

@@ -2,10 +2,15 @@ package ir.ac.kntu.logic;
 
 import ir.ac.kntu.util.Cipher;
 import ir.ac.kntu.util.ScannerWrapper;
+import ir.ac.kntu.logic.Options.Color;
 
 public class User {
+    public enum UserChangeMenu {
+        CHANGE_FIRST_NAME, CHANGE_USERNAME, CHANGE_PASSWORD,
+        CHANGE_EMAIL, CHANGE_PHONE_NUMBER, CHANGE_NATIONAL_CODE, BACK
+    }
 
-    private String firstname;
+    private String firstName;
 
     private String username;
 
@@ -17,8 +22,8 @@ public class User {
 
     private String nationalCode;
 
-    public User(String firstname, String username, String password, String email, String phoneNumber, String nationalCode) {
-        this.firstname = firstname;
+    public User(String firstName, String username, String password, String email, String phoneNumber, String nationalCode) {
+        this.firstName = firstName;
         this.username = username;
         this.hashedPassword = Cipher.sha256(password);
         this.email = email;
@@ -26,8 +31,8 @@ public class User {
         this.nationalCode = nationalCode;
     }
 
-    public String getFirstname() {
-        return firstname;
+    public String getFirstName() {
+        return firstName;
     }
 
     public String getUsername() {
@@ -51,23 +56,27 @@ public class User {
     }
 
     public void changeHandler() {
-        Options.UserChangeMenuOption option;
+        UserChangeMenu option;
         do {
-            option = ScannerWrapper.readEnum(Options.UserChangeMenuOption.values(), Options.Color.YELLOW.getCode());
+            option = ScannerWrapper.readEnum(UserChangeMenu.values(), Color.YELLOW.getCode());
             handleTheOption(option);
-        } while (option != Options.UserChangeMenuOption.BACK);
+        } while (option != UserChangeMenu.BACK);
     }
 
-    public void handleTheOption(Options.UserChangeMenuOption option) {
+    private void handleTheOption(UserChangeMenu option) {
         switch (option) {
-            case CHANGE_FIRST_NAME -> this.firstname = ScannerWrapper.readString("Enter new name: ");
+            case CHANGE_FIRST_NAME -> this.firstName = ScannerWrapper.readString("Enter new firstName: ");
             case CHANGE_USERNAME -> this.username = ScannerWrapper.readString("Enter new username: ");
             case CHANGE_PASSWORD -> {
                 String oldPassToHash = ScannerWrapper.readPassword("Enter old password: ");
-                assert oldPassToHash != null;
+                if (oldPassToHash == null) {
+                    break;
+                }
                 if (Cipher.sha256(oldPassToHash).equals(hashedPassword)) {
                     String newPassToHash = ScannerWrapper.readPassword("Enter new password: ");
-                    assert newPassToHash != null;
+                    if (newPassToHash == null) {
+                        break;
+                    }
                     this.hashedPassword = Cipher.sha256(newPassToHash);
                 } else {
                     System.out.println("Wrong password");
@@ -78,15 +87,14 @@ public class User {
             case CHANGE_NATIONAL_CODE -> this.nationalCode = ScannerWrapper.readString("Enter new national code: ");
             case BACK -> {
             }
-            default -> System.out.println("Invalid option!");
+            default -> {}
         }
     }
 
     public static User readUser(String massage) {
         System.out.println(massage);
-
-        String firstname = ScannerWrapper.readString("Enter firstname: ");
-        String username = ScannerWrapper.readString("Enter username: ");
+        String firstName = ScannerWrapper.readString("Enter firstname: ");
+        String userName = ScannerWrapper.readString("Enter username: ");
         String passToHash = ScannerWrapper.readPassword("Enter password: ");
         if (passToHash == null) {
             return null;
@@ -95,17 +103,13 @@ public class User {
         String phoneNumber = ScannerWrapper.readString("Enter phone number: ");
         String nationalCode = ScannerWrapper.readString("Enter national code: ");
 
-        return new User(firstname, username, passToHash, email, phoneNumber, nationalCode);
-    }
-
-    public User deepCopy() {
-        return new User(firstname, username, hashedPassword, email, phoneNumber, nationalCode);
+        return new User(firstName, userName, passToHash, email, phoneNumber, nationalCode);
     }
 
     @Override
     public String toString() {
         return "User{" +
-                "name='" + firstname + '\'' +
+                "name='" + firstName + '\'' +
                 ", username='" + username + '\'' +
                 "}";
     }
@@ -144,4 +148,5 @@ public class User {
             return nationalCode.equals(other.nationalCode);
         }
     }
+
 }

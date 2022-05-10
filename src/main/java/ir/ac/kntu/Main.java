@@ -1,175 +1,382 @@
 package ir.ac.kntu;
 
-import ir.ac.kntu.logic.*;
+import ir.ac.kntu.logic.User;
+import ir.ac.kntu.logic.Course;
+import ir.ac.kntu.logic.Question;
+import ir.ac.kntu.logic.Options.*;
+
+import ir.ac.kntu.util.Cipher;
 import ir.ac.kntu.util.ScannerWrapper;
 
-public class Main {
-    public static void main(String[] args) {
-        Courses courses = new Courses();
+import java.util.ArrayList;
+import java.util.Comparator;
 
-        Options.LoginMenuOption option;
+public class Main {
+    public static User currentUser = null;
+
+    public static ArrayList<User> users = new ArrayList<>();
+
+    public static ArrayList<Course> courses = new ArrayList<>();
+
+    public static ArrayList<Question> bankOfQuestions = new ArrayList<>();
+
+    public static void main(String[] args) {
+        LoginMenu option;
         do {
-            option = ScannerWrapper.readEnum(Options.LoginMenuOption.values(), Options.Color.RED.getCode());
-            handleTheLoginMenuOption(courses, option);
-        } while (option != Options.LoginMenuOption.EXIT);
+            option = ScannerWrapper.readEnum(LoginMenu.values(), Color.RED.getCode());
+            handleTheLoginMenu(option);
+        } while (option != LoginMenu.EXIT);
 
         ScannerWrapper.close();
     }
 
-    public static void handleTheLoginMenuOption(Courses courses, Options.LoginMenuOption loginMenuOption) {
+    public static void handleTheLoginMenu(LoginMenu loginMenuOption) {
         switch (loginMenuOption) {
+            case SIGN_IN -> {
+                if (!signIn()) {
+                    break;
+                }
+                MainMenu option;
+                do {
+                    option = ScannerWrapper.readEnum(MainMenu.values(), Color.BLUE.getCode());
+                    handleTheMainMenu(option);
+                } while (option != MainMenu.LOGOUT);
+            }
             case SIGN_UP -> {
-                if (!courses.signUp()) {
+                if (!signUp()) {
                     break;
                 }
-                Options.MainMenuOption option;
+                MainMenu option;
                 do {
-                    option = ScannerWrapper.readEnum(Options.MainMenuOption.values(), Options.Color.BLUE.getCode());
-                    handleTheMainMenuOption(courses, option);
-                } while (option != Options.MainMenuOption.BACK && option != Options.MainMenuOption.LOGOUT);
+                    option = ScannerWrapper.readEnum(MainMenu.values(), Color.BLUE.getCode());
+                    handleTheMainMenu(option);
+                } while (option != MainMenu.LOGOUT);
             }
-            case LOGIN -> {
-                if (!courses.login()) {
-                    break;
-                }
-                Options.MainMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.MainMenuOption.values(), Options.Color.BLUE.getCode());
-                    handleTheMainMenuOption(courses, option);
-                } while (option != Options.MainMenuOption.BACK && option != Options.MainMenuOption.LOGOUT);
+            case EXIT -> {
             }
-            case UNDEFINED -> System.out.println("Invalid option!");
             default -> {}
         }
     }
 
-    public static void handleTheMainMenuOption(Courses courses, Options.MainMenuOption mainMenuOption) {
+    public static boolean signIn() {
+        if (users.size() == 0) {
+            System.out.println("No users in the system");
+            return false;
+        }
+
+        String username = ScannerWrapper.readString("username: ");
+        String passToHash = ScannerWrapper.readPassword("Password: ");
+        if (passToHash == null) {
+            return false;
+        }
+
+        for (User user : users) {
+            if (user.getUsername().equals(username) &&
+                    user.getHashedPassword().equals(Cipher.sha256(passToHash))) {
+                currentUser = user;
+                return true;
+            }
+        }
+        System.out.println("Invalid username or password");
+        return false;
+    }
+
+    public static boolean signUp() {
+        User user = User.readUser("Enter your attributes");
+        if (user == null) {
+            System.out.println("Sign up process failed");
+            return false;
+        }
+        currentUser = user;
+        users.add(user);
+        return true;
+    }
+
+    public static void handleTheMainMenu(MainMenu mainMenuOption) {
         switch (mainMenuOption) {
-            case SEARCH -> {
-                Options.SearchMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.SearchMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheSearchMenuOption(courses, option);
-                } while (option != Options.SearchMenuOption.BACK);
-            }
-            case ADD -> {
-                Options.AddMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.AddMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheAddMenuOption(courses, option);
-                } while (option != Options.AddMenuOption.BACK);
-            }
-            case CHANGE -> {
-                Options.ChangeMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.ChangeMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheChangeMenuOption(courses, option);
-                } while (option != Options.ChangeMenuOption.BACK);
-            }
-            case REMOVE -> {
-                Options.RemoveMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.RemoveMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheRemoveMenuOption(courses, option);
-                } while (option != Options.RemoveMenuOption.BACK);
-            }
-            case LIST_OF -> {
-                Options.ListOfMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.ListOfMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheListOfMenuOption(courses, option);
-                } while (option != Options.ListOfMenuOption.BACK);
-            }
-            case OTHER -> {
-                Options.OtherMenuOption option;
-                do {
-                    option = ScannerWrapper.readEnum(Options.OtherMenuOption.values(), Options.Color.GREEN.getCode());
-                    handleTheOtherMenuOption(courses, option);
-                } while (option != Options.OtherMenuOption.BACK);
-            }
-            case LOGOUT -> courses.logout();
-            case UNDEFINED -> System.out.println("Invalid option!");
+            case COURSES -> courses();
+            case SEARCH -> search();
+            case BANK_OF_QUESTIONS -> questionBank();
+            case ACCOUNT -> account();
+            case LOGOUT -> logout();
             default -> {}
         }
     }
 
-    public static void handleTheSearchMenuOption(Courses courses, Options.SearchMenuOption searchMenuOption) {
-        switch (searchMenuOption) {
-            case SEARCH_USER -> {
-                User user = courses.searchUser();
-                if (user != null) {
-                    System.out.println(user);
+    public static void courses() {
+        enum Option {ADD, REMOVE, LIST, REGISTER_TO_COURSE, BACK}
+
+        Option option = ScannerWrapper.readEnum(Option.values());
+        switch (option) {
+            case ADD -> addCourse();
+            case REMOVE -> removeCourse();
+            case LIST -> {
+                enum List {COURSES_IM_LECTURER, COURSES_IM_STUDENT}
+
+                List list = ScannerWrapper.readEnum(List.values());
+                switch (list) {
+                    case COURSES_IM_LECTURER -> {
+                        Integer index = getCourseIndexImLecturer();
+                        if (index == null) {
+                            break;
+                        }
+                        courses.get(index).lecturerHandler();
+                    }
+                    case COURSES_IM_STUDENT -> {
+                        Integer index = getCourseIndexImStudent();
+                        if (index == null) {
+                            break;
+                        }
+                        courses.get(index).studentHandler();
+                    }
+                    default -> {}
                 }
             }
-            case SEARCH_COURSE -> {
-                Course course = courses.searchCourse();
-                if (course != null) {
-                    System.out.println(course);
+            case REGISTER_TO_COURSE -> registerToCourse();
+            case BACK -> {
+                return;
+            }
+            default -> {}
+        }
+        courses();
+    }
+
+    private static void removeCourse() {
+        Course course = searchCourse();
+        if (course == null) {
+            return;
+        }
+        if (course.getLecturer().equals(currentUser)) {
+            courses.remove(course);
+            System.out.println("Course removed successfully");
+        } else {
+            System.out.println("You are not the lecturer of this course");
+        }
+    }
+
+    private static void registerToCourse() {
+        Course course = searchCourse();
+        if (course != null) {
+            if (course.getRegister().contains(currentUser)) {
+                System.out.println("You are already registered to this course");
+            }
+            if (course.getStatus() == Course.CourseStatus.CLOSE) {
+                System.out.println("Course is closed");
+            } else if (course.getStatus() == Course.CourseStatus.OPEN_PRIVATE) {
+                String passToHash = ScannerWrapper.readPassword("Password: ");
+                if (!Cipher.sha256(passToHash).equals(course.getHashedPassword())) {
+                    System.out.println("Invalid password");
+                    return;
                 }
             }
-            case SEARCH_ANSWERS_BY_EMAIL -> courses.searchAnswersByEmail();
-            case UNDEFINED -> System.out.println("Invalid option!");
+            course.register(currentUser);
+            System.out.println("Successfully registered to the course");
+        }
+    }
+
+    private static Integer getCourseIndexImStudent() {
+        for (int i = 0; i < courses.size(); i++) {
+            if (courses.get(i).getRegister().contains(currentUser)) {
+                System.out.println(i + 1 + ". " + courses.get(i).toString());
+            }
+        }
+        int index = ScannerWrapper.readInt("Enter the course number: ") - 1;
+        if (index < 0 || index >= courses.size()) {
+            System.out.println("Invalid index");
+            return null;
+        }
+        return index;
+    }
+
+    private static Integer getCourseIndexImLecturer() {
+        for (int i = 0; i < courses.size(); i++) {
+            if (courses.get(i).getLecturer().equals(currentUser)) {
+                System.out.println(i + 1 + ". " + courses.get(i).toString());
+            }
+        }
+        int index = ScannerWrapper.readInt("Enter the course number: ") - 1;
+        if (index < 0 || index >= courses.size()) {
+            System.out.println("Invalid index");
+            return null;
+        }
+        return index;
+    }
+
+    private static void addCourse() {
+        Course course = Course.readCourse(currentUser, "Enter your course");
+        if (course == null) {
+            System.out.println("Adding course failed");
+            return;
+        }
+        courses.add(course);
+    }
+
+    public static void search() {
+        enum Option {SEARCH_USER, SEARCH_COURSE, BACK}
+
+        Option option = ScannerWrapper.readEnum(Option.values());
+        switch (option) {
+            case SEARCH_USER -> System.out.println(searchUser());
+            case SEARCH_COURSE -> System.out.println(searchCourse());
+            case BACK -> {
+                return;
+            }
+            default -> {}
+        }
+        search();
+    }
+
+    public static Course searchCourse() {
+        String choice = ScannerWrapper.readString("Search by name, lecturer or institute? (n/l/i)");
+        switch (choice) {
+            case "n" -> {
+                String name = ScannerWrapper.readString("Enter name: ");
+                for (Course course : courses) {
+                    if (course.getName().equals(name)) {
+                        return course;
+                    }
+                }
+                System.out.println("Course not found");
+                return null;
+            }
+            case "l" -> {
+                String lecturer = ScannerWrapper.readString("Enter lecturer: ");
+                for (Course course : courses) {
+                    if (course.getLecturer().getUsername().equals(lecturer)) {
+                        return course;
+                    }
+                }
+                System.out.println("Course not found");
+                return null;
+            }
+            case "i" -> {
+                String institute = ScannerWrapper.readString("Enter institute: ");
+                for (Course course : courses) {
+                    if (course.getInstitute().equals(institute)) {
+                        return course;
+                    }
+                }
+                System.out.println("Course not found");
+                return null;
+            }
+            default -> {
+                System.out.println("Invalid choice!");
+                return null;
+            }
+        }
+    }
+
+    public static User searchUser() {
+        String choice = ScannerWrapper.readString("Search by username or email? (u/e)");
+        switch (choice) {
+            case "u" -> {
+                String username = ScannerWrapper.readString("Enter username: ");
+                for (User user : users) {
+                    if (user.getUsername().equals(username)) {
+                        return user;
+                    }
+                }
+                System.out.println("User not found");
+                return null;
+            }
+            case "e" -> {
+                String email = ScannerWrapper.readString("Enter email: ");
+                for (User user : users) {
+                    if (user.getEmail().equals(email)) {
+                        return user;
+                    }
+                }
+                System.out.println("User not found");
+                return null;
+            }
+            default -> {
+                System.out.println("Invalid choice!");
+                return null;
+            }
+        }
+    }
+
+    public static Question searchQuestion() {
+        String questionName = ScannerWrapper.readString("Enter question name: ");
+        for (Question question : bankOfQuestions) {
+            if (question.getName().equals(questionName)) {
+                return question;
+            }
+        }
+        System.out.println("Question not found");
+        return null;
+    }
+
+    public static void questionBank() {
+        enum Option {ADD, LIST, BACK}
+
+        Option option = ScannerWrapper.readEnum(Option.values());
+        switch (option) {
+            case ADD -> addQuestionToBank();
+            case LIST -> {
+                sortBank();
+                Integer index = getQuestionIndex();
+                if (index == null) {
+                    break;
+                }
+                bankOfQuestions.get(index).studentHandler(currentUser);
+            }
+            case BACK -> {
+                return;
+            }
+            default -> {}
+        }
+        questionBank();
+    }
+
+    private static Integer getQuestionIndex() {
+        for (int i = 0; i < bankOfQuestions.size(); i++) {
+            System.out.println(i + 1 + ". " + bankOfQuestions.get(i).toString());
+        }
+        int index = ScannerWrapper.readInt("Enter the question number: ") - 1;
+        if (index < 0 || index >= bankOfQuestions.size()) {
+            System.out.println("Invalid index");
+            return null;
+        }
+        return index;
+    }
+
+    private static void sortBank() {
+        enum SortBy {UPLOAD_TIME, DIFFICULTY, LIST}
+
+        SortBy sortBy = ScannerWrapper.readEnum(SortBy.values());
+        switch (sortBy) {
+            case UPLOAD_TIME, LIST -> bankOfQuestions.sort(Comparator.comparing(Question::getUploadDateTime));
+            case DIFFICULTY -> bankOfQuestions.sort(Comparator.comparing(Question::getLevel));
             default -> {}
         }
     }
 
-    public static void handleTheAddMenuOption(Courses courses, Options.AddMenuOption addMenuOption) {
-        switch (addMenuOption) {
-            case ADD_USER -> courses.addUser();
-            case ADD_COURSE -> courses.addCourse();
-            case ADD_QUESTION_TO_ASSIGNMENT_FROM_QUESTION_BANK -> courses.addQuestionToAssignmentFromQuestionBank();
-            case ADD_QUESTION_TO_QUESTION_BANK -> courses.addQuestionToQuestionBank();
-            case ADD_ASSIGNMENT -> courses.addAssignment();
-            case ADD_ANSWER_TO_QUESTION_OF_ASSIGNMENT -> courses.addAnswerToQuestionOfAssignment();
-            case ADD_ANSWER_TO_QUESTION_OF_QUESTION_BACK -> courses.addAnswerToQuestionOfQuestionBack();
-            case UNDEFINED -> System.out.println("Invalid option!");
-            default -> {}
+    private static void addQuestionToBank() {
+        Question question = Question.readQuestion("Enter your question");
+        if (question == null) {
+            System.out.println("Adding question failed");
+            return;
         }
+        bankOfQuestions.add(question);
     }
 
-    public static void handleTheChangeMenuOption(Courses courses, Options.ChangeMenuOption changeMenuOption) {
-        switch (changeMenuOption) {
-            case CHANGE_USER -> courses.changeUser();
-            case CHANGE_COURSE -> courses.changeCourse();
-            case CHANGE_ASSIGNMENT -> courses.changeAssignment();
-            case CHANGE_ANSWER -> courses.changeAnswer();
-            case UNDEFINED -> System.out.println("Invalid option!");
+    public static void account() {
+        enum Option {EDIT, BACK}
+
+        Option option = ScannerWrapper.readEnum(Option.values());
+        switch (option) {
+            case EDIT -> currentUser.changeHandler();
+            case BACK -> {
+                return;
+            }
             default -> {}
         }
+        account();
     }
 
-    public static void handleTheRemoveMenuOption(Courses courses, Options.RemoveMenuOption removeMenuOption) {
-        switch (removeMenuOption) {
-            case REMOVE_USER -> courses.removeUser();
-            case REMOVE_COURSE -> courses.removeCourse();
-            case REMOVE_ASSIGNMENT -> courses.removeAssignment();
-            case REMOVE_ANSWER -> courses.removeAnswer();
-            case UNDEFINED -> System.out.println("Invalid option!");
-            default -> {}
-        }
-    }
-
-    public static void handleTheListOfMenuOption(Courses courses, Options.ListOfMenuOption listOfMenuOption) {
-        switch (listOfMenuOption) {
-            case LIST_OF_USERS -> courses.listOfUsers();
-            case LIST_OF_COURSES -> courses.listOfCourses();
-            case LIST_OF_ASSIGNMENTS -> courses.listOfAssignments();
-            case LIST_OF_ANSWERS -> courses.listOfAnswers();
-            case QUESTION_BANK -> courses.listQuestionBank();
-            case UNDEFINED -> System.out.println("Invalid option!");
-            default -> {}
-        }
-    }
-
-    public static void handleTheOtherMenuOption(Courses courses, Options.OtherMenuOption otherMenuOption) {
-        switch (otherMenuOption) {
-            case REGISTER_TO_COURSE -> courses.registerToCourse();
-            case REGISTER_STUDENT_TO_COURSE -> courses.registerStudentToCourse();
-            case SCORE_BOARD -> courses.scoreBoard();
-            case POINTING -> courses.pointing();
-            case UNDEFINED -> System.out.println("Invalid option!");
-            default -> {}
-        }
+    public static void logout() {
+        currentUser = null;
     }
 
 }
